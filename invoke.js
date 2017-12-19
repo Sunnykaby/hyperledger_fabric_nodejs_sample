@@ -5,57 +5,15 @@ var path = require('path');
 var util = require('util');
 var sdkUtils = require('fabric-client/lib/utils');
 const fs = require('fs');
-var varies_app = require('./varies.js');
-var options_org1_i = {
-    user_id: 'Admin@org1.example.com',
-    msp_id: 'Org1MSP',
-    channel_id: 'mychannel',
-    chaincode_id: 'mycc',
-    peer_url: 'grpcs://localhost:7051',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    event_url: 'grpcs://localhost:7053',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    orderer_url: 'grpcs://localhost:7050',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    privateKeyFolder: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore',
-    signedCert: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem',
-    peer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt',
-    orderer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt',
-    server_hostname: "peer0.org1.example.com"
-};
+var VariesApp = require('./varies.js');
 
-var options_org2_i = {
-    user_id: 'Admin@org2.example.com',
-    msp_id: 'Org2MSP',
-    channel_id: 'mychannel',
-    chaincode_id: 'mycc',
-    peer_url: 'grpcs://localhost:9051',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    event_url: 'grpcs://localhost:9053',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    orderer_url: 'grpcs://localhost:7050',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    privateKeyFolder: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore',
-    signedCert: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts/Admin@org2.example.com-cert.pem',
-    peer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt',
-    orderer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt',
-    server_hostname: "peer0.org2.example.com"
-};
-
-var options_org3_i = {
-    user_id: 'Admin@org3.example.com',
-    msp_id: 'Org3MSP',
-    channel_id: 'mychannel',
-    chaincode_id: 'mycc',
-    peer_url: 'grpcs://localhost:11051',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    event_url: 'grpcs://localhost:11053',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    orderer_url: 'grpcs://localhost:7050',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    privateKeyFolder: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp/keystore',
-    signedCert: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp/signcerts/Admin@org3.example.com-cert.pem',
-    peer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt',
-    orderer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt',
-    server_hostname: "peer0.org3.example.com"
-};
-
+var va = new VariesApp();
+var opt_type = va.getOptType();
 var channel = {};
 var client = null;
 var targets = [];
 var tx_id = null;
-var options = options_org3_i;
+var options = va.getOptions(opt_type.ORG3_I);
 const getKeyFilesInDir = (dir) => {
     //该函数用于找到keystore目录下的私钥文件的路径 
     const files = fs.readdirSync(dir)
@@ -107,8 +65,31 @@ Promise.resolve().then(() => {
 
     channel.addOrderer(orderer);
     targets.push(peer);
-    return;
-}).then(() => {
+    //join org1 or org2 peer
+    var org1_peer = va.getOptions(opt_type.ORG1_I);
+    let data_org1 = fs.readFileSync(org1_peer.peer_tls_cacerts);
+    let peer_org1 = client.newPeer(org1_peer.peer_url,
+        {
+            pem: Buffer.from(data_org1).toString(),
+            'ssl-target-name-override': org1_peer.server_hostname
+        }
+    );
+    channel.addPeer(peer_org1);
+    targets.push(peer_org1);
+    var org2_peer = va.getOptions(opt_type.ORG2_I);
+    let data_org2 = fs.readFileSync(org2_peer.peer_tls_cacerts);
+    let peer_org2 = client.newPeer(org2_peer.peer_url,
+        {
+            pem: Buffer.from(data_org2).toString(),
+            'ssl-target-name-override': org2_peer.server_hostname
+        }
+    );
+    channel.addPeer(peer_org2);
+    targets.push(peer_org2);
+    return channel.initialize();
+}).then((config) => {
+    console.log(config);
+    console.log(' orglist:: ', channel.getOrganizations());
     tx_id = client.newTransactionID();
     console.log("Assigning transaction_id: ", tx_id._transaction_id);
     //发起转账行为，将a->b 10元 
@@ -126,13 +107,41 @@ Promise.resolve().then(() => {
     var proposal = results[1];
     var header = results[2];
     let isProposalGood = false;
-    if (proposalResponses && proposalResponses[0].response &&
-        proposalResponses[0].response.status === 200) {
-        isProposalGood = true;
-        console.log('transaction proposal was good');
-    } else {
-        console.error('transaction proposal was bad');
+    var all_good = true ;
+    for(var i in proposalResponses) {
+        let one_good = false;
+        let proposal_response = proposalResponses[i];
+        if( proposal_response.response && proposal_response.response.status === 200) {
+            console.log('transaction proposal has response status of good');
+            one_good = channel.verifyProposalResponse(proposal_response);
+            if(one_good) {
+                break;
+            }
+        } else {
+            console.log('transaction proposal was bad');
+        }
+        all_good = all_good & one_good;
     }
+    if (all_good) {
+        // check all the read/write sets to see if the same, verify that each peer
+        // got the same results on the proposal
+        all_good = channel.compareProposalResponseResults(proposalResponses);
+        console.log('compareProposalResponseResults exection did not throw an error');
+        if(all_good){
+            console.log(' All proposals have a matching read/writes sets');
+            isProposalGood = true;
+        }
+        else {
+            console.log(' All proposals do not have matching read/write sets');
+        }
+    }
+    // if (proposalResponses && proposalResponses[0].response &&
+    //     proposalResponses[0].response.status === 200) {
+    //     isProposalGood = true;
+    //     console.log('transaction proposal was good');
+    // } else {
+    //     console.error('transaction proposal was bad');
+    // }
     if (isProposalGood) {
         console.log(util.format(
             'Successfully sent Proposal and received ProposalResponse: Status - %s, message - "%s", metadata - "%s", endorsement signature: %s',

@@ -3,46 +3,16 @@
 var hfc = require('fabric-client'); 
 var path = require('path'); 
 var sdkUtils = require('fabric-client/lib/utils') 
-var fs = require('fs'); 
-var options_org1 = { 
-    user_id: 'Admin@org1.example.com', 
-    msp_id:'Org1MSP', 
-    channel_id: 'mychannel', 
-    chaincode_id: 'mycc', 
-    network_url: 'grpcs://localhost:7051',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    privateKeyFolder:'/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore', 
-    signedCert:'/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem', 
-    tls_cacerts:'/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt', 
-    server_hostname: "peer0.org1.example.com" 
-};
+var fs = require('fs');
+var VariesApp = require('./varies.js'); 
 
-var options_org2 = { 
-    user_id: 'Admin@org2.example.com', 
-    msp_id:'Org2MSP', 
-    channel_id: 'mychannel', 
-    chaincode_id: 'mycc', 
-    network_url: 'grpcs://localhost:9051',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    privateKeyFolder:'/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore', 
-    signedCert:'/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts/Admin@org2.example.com-cert.pem', 
-    tls_cacerts:'/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt', 
-    server_hostname: "peer0.org2.example.com" 
-};
+var va = new VariesApp();
+var va_opt_type = va.getOptType();
 
-var options_org3 = { 
-    user_id: 'Admin@org3.example.com', 
-    msp_id:'Org3MSP', 
-    channel_id: 'mychannel', 
-    chaincode_id: 'mycc', 
-    network_url: 'grpcs://localhost:11051',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    privateKeyFolder:'/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp/keystore', 
-    signedCert:'/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp/signcerts/Admin@org3.example.com-cert.pem', 
-    tls_cacerts:'/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt', 
-    server_hostname: "peer0.org3.example.com" 
-};
 
 var channel = {}; 
 var client = null; 
-var options = options_org3;//choose the target peer
+var options = va.getOptions(va_opt_type.ORG3_Q);//choose the target peer
 const getKeyFilesInDir = (dir) => { 
 //该函数用于找到keystore目录下的私钥文件的路径 
     var files = fs.readdirSync(dir) 

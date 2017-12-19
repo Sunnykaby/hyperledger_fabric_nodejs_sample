@@ -6,80 +6,12 @@ var util = require('util');
 var sdkUtils = require('fabric-client/lib/utils');
 var blockDecoder = require('fabric-client/lib/BlockDecoder.js');
 const fs = require('fs');
-var varies_app = require('./varies.js');
+var VariesApp = require('./varies.js');
 var MSP = require('./MSP.js');
 var FabricConfigBuilder = require('./FabricConfigBuilder.js');
 var log4js = require('log4js');
 var logger = log4js.getLogger();
 var configtxlator = require('./configtxlator.js');
-
-var options = {
-    message_type_block: 'common.Block',
-    message_type_config: 'common.Config',
-    message_type_update: 'update-from-configs',
-    meesage_type_configUpdate: 'common.ConfigUpdate',
-    message_type_envelope: 'common.Envelope',
-};
-
-var options_org1_i = {
-    user_id: 'Admin@org1.example.com',
-    msp_id: 'Org1MSP',
-    channel_id: 'mychannel',
-    chaincode_id: 'mycc',
-    peer_url: 'grpcs://localhost:7051',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    event_url: 'grpcs://localhost:7053',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    orderer_url: 'grpcs://localhost:7050',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    privateKeyFolder: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore',
-    signedCert: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem',
-    peer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt',
-    orderer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt',
-    server_hostname: "peer0.org1.example.com"
-};
-
-var options_org2_i = {
-    user_id: 'Admin@org2.example.com',
-    msp_id: 'Org2MSP',
-    channel_id: 'mychannel',
-    chaincode_id: 'mycc',
-    peer_url: 'grpcs://localhost:9051',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    event_url: 'grpcs://localhost:9053',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    orderer_url: 'grpcs://localhost:7050',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    privateKeyFolder: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore',
-    signedCert: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts/Admin@org2.example.com-cert.pem',
-    peer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt',
-    orderer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt',
-    server_hostname: "peer0.org2.example.com"
-};
-
-var options_org3_i = {
-    user_id: 'Admin@org3.example.com',
-    msp_id: 'Org3MSP',
-    channel_id: 'mychannel',
-    chaincode_id: 'mycc',
-    peer_url: 'grpcs://localhost:11051',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    event_url: 'grpcs://localhost:11053',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    orderer_url: 'grpcs://localhost:7050',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    privateKeyFolder: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp/keystore',
-    signedCert: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp/signcerts/Admin@org3.example.com-cert.pem',
-    peer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt',
-    orderer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt',
-    server_hostname: "peer0.org3.example.com",
-    server_port: 7051
-};
-
-var options_orderer = {
-    user_id: 'Admin@example.com',
-    msp_id: 'OrdererMSP',
-    channel_id: 'mychannel',
-    chaincode_id: 'mycc',
-    peer_url: 'grpcs://localhost:11051',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    event_url: 'grpcs://localhost:11053',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    orderer_url: 'grpcs://localhost:7050',//因为启用了TLS，所以是grpcs,如果没有启用TLS，那么就是grpc 
-    privateKeyFolder: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/keystore',
-    signedCert: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem',
-    orderer_tls_cacerts: '/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt',
-    server_hostname: "orderer.example.com"
-};
 
 var configDir = {
     path: "config",
@@ -94,9 +26,13 @@ var client = null;
 var orderer = null;
 var targets = [];
 var tx_id = null;
-var options = options_org1_i;
+var va = new VariesApp();
+var va_opt_type = va.getOptType();
+var orderer_opt = va.getOptions(va_opt_type.ORDERER);
+var user_options = va.getOptions(va_opt_type.ORG1_I);
+var add_opt = va.getOptions(va_opt_type.ORG3_I);
 // var tarChannel = 'testchainid';
-var tarChannel = options.channel_id;
+var tarChannel = add_opt.channel_id;
 var consortium = "SampleConsortium";
 var configtx = new configtxlator();
 
@@ -126,11 +62,11 @@ Promise.resolve().then(() => {
     console.log("Load privateKey and signedCert");
     client = new hfc();
     var createUserOpt = {
-        username: options.user_id,
-        mspid: options.msp_id,
+        username: user_options.user_id,
+        mspid: user_options.msp_id,
         cryptoContent: {
-            privateKey: getKeyFilesInDir(options.privateKeyFolder)[0],
-            signedCert: options.signedCert
+            privateKey: getKeyFilesInDir(user_options.privateKeyFolder)[0],
+            signedCert: user_options.signedCert
         }
     }
     //以上代码指定了当前用户的私钥，证书等基本信息 
@@ -142,19 +78,19 @@ Promise.resolve().then(() => {
     })
 }).then((user) => {
     channel = client.newChannel(tarChannel);
-    let data = fs.readFileSync(options.peer_tls_cacerts);
-    let peer = client.newPeer(options.peer_url,
+    let data = fs.readFileSync(user_options.peer_tls_cacerts);
+    let peer = client.newPeer(user_options.peer_url,
         {
             pem: Buffer.from(data).toString(),
-            'ssl-target-name-override': options.server_hostname
+            'ssl-target-name-override': user_options.server_hostname
         }
     );
     //因为启用了TLS，所以上面的代码就是指定Peer的TLS的CA证书 
     channel.addPeer(peer);
     //连接Orderer的时候也启用了TLS，也是同样的处理方法 
-    let odata = fs.readFileSync(options.orderer_tls_cacerts);
+    let odata = fs.readFileSync(orderer_opt.orderer_tls_cacerts);
     let caroots = Buffer.from(odata).toString();
-    orderer = client.newOrderer(options.orderer_url, {
+    orderer = client.newOrderer(orderer_opt.orderer_url, {
         'pem': caroots,
         'ssl-target-name-override': "orderer.example.com"
     });
@@ -179,20 +115,30 @@ Promise.resolve().then(() => {
     var updated_config = JSON.parse(updated_config_json);
 
     // Build new organization group
-    var name = options_org3_i.msp_id;
-    var mspid = options_org3_i.msp_id;
-    var msp = new MSP(options_org3_i.msp_id);
+    var name = add_opt.msp_id;
+    var mspid = add_opt.msp_id;
+    var msp = new MSP(add_opt.msp_id);
     msp.load(mspdir);
     var builder = new FabricConfigBuilder();
     builder.addOrganization(name, mspid, msp.getMSP());
-    builder.addAnchorPeer(options_org3_i.server_hostname, options_org3_i.server_port);
+    builder.addAnchorPeer(add_opt.server_hostname, add_opt.server_port);
     //builder.addAnchorPeerArray(anchors);
 
     var org_app = builder.buildApplicationGroup();
+    // var creator_mod_policy = builder.buildApplicationPolicy("Org1MSP");
     //add the new group into the app groups(app channel)
     // updated_config.channel_group.groups.Application.groups[name] = org_app;
+    // delete updated_config.channel_group.groups.Application.groups[name];
+    // add the new policy 
+    // updated_config.channel_group.groups.Application.policies["Creator"] = creator_mod_policy;
+    // change the policy
+    // updated_config.channel_group.groups.Application.mod_policy = "Creator";
     //change the policy 
-    updated_config.channel_group.groups.Application.policies.Admins.policy.value.rule = "ALL";
+    // updated_config.channel_group.groups.Application.policies.Admins.policy.value.rule = "ANY";
+    // updated_config.channel_group.groups.Application.mod_policy = "Writers";
+    // updated_config.channel_group.groups.Application.policies.Writers.policy.value.sub_policy = "/Channel/Application/Org1MSP/Admins";
+    // updated_config.channel_group.groups.Application.mod_policy = "Admins";
+    // updated_config.channel_group.groups.Application.policies.Writers.policy.value.sub_policy = "Admins";
     updated_config_json = JSON.stringify(updated_config);//obj -> json
     logger.info(' updated_config_json :: %s', updated_config_json);
     //log the config json of update
@@ -207,12 +153,12 @@ Promise.resolve().then(() => {
     //for sign test
 
     //sign
-    //orderer signature
+    //org1 signature
     var signature = client.signChannelConfig(config_proto);
     signatures.push(signature);
 
-    //get org1
-//     var opt = options_org1_i;
+    //get orderer
+//     var opt = orderer_opt;
 //     var createUserOpt = {
 //         username: opt.user_id,
 //         mspid: opt.msp_id,
@@ -229,54 +175,54 @@ Promise.resolve().then(() => {
 //         return client.createUser(createUserOpt)
 //     })
 // }).then((user) => {
-//     //org1 signature
+//     //orderer signature
 //     var signature = client.signChannelConfig(config_proto);
 //     signatures.push(signature);
 
 
-    //     //get org2
-//     var opt = options_org2_i;
-//     var createUserOpt = {
-//         username: opt.user_id,
-//         mspid: opt.msp_id,
-//         cryptoContent: {
-//             privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
-//             signedCert: opt.signedCert
-//         }
-//     }
-//     //以上代码指定了当前用户的私钥，证书等基本信息 
-//     return sdkUtils.newKeyValueStore({
-//         path: "/tmp/fabric-client-stateStore/"
-//     }).then((store) => {
-//         client.setStateStore(store)
-//         return client.createUser(createUserOpt)
-//     })
-// }).then((user) => {
-//     //org2 signature
-//     var signature = client.signChannelConfig(config_proto);
-//     signatures.push(signature);
+    //get org2 signature
+    var opt = va.getOptions(va_opt_type.ORG2_I);
+    var createUserOpt = {
+        username: opt.user_id,
+        mspid: opt.msp_id,
+        cryptoContent: {
+            privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
+            signedCert: opt.signedCert
+        }
+    }
+    //以上代码指定了当前用户的私钥，证书等基本信息 
+    return sdkUtils.newKeyValueStore({
+        path: "/tmp/fabric-client-stateStore/"
+    }).then((store) => {
+        client.setStateStore(store)
+        return client.createUser(createUserOpt)
+    })
+}).then((user) => {
+    //org2 signature
+    var signature = client.signChannelConfig(config_proto);
+    signatures.push(signature);
 
-//     //get org3
-//     var opt = options_org3_i;
-//     var createUserOpt = {
-//         username: opt.user_id,
-//         mspid: opt.msp_id,
-//         cryptoContent: {
-//             privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
-//             signedCert: opt.signedCert
-//         }
-//     }
-//     //以上代码指定了当前用户的私钥，证书等基本信息 
-//     return sdkUtils.newKeyValueStore({
-//         path: "/tmp/fabric-client-stateStore/"
-//     }).then((store) => {
-//         client.setStateStore(store)
-//         return client.createUser(createUserOpt)
-//     })
-// }).then((user) => {
-//     //org3 signature
-//     var signature = client.signChannelConfig(config_proto);
-//     signatures.push(signature);
+    //     //get org3
+    //     var opt = options_org3_i;
+    //     var createUserOpt = {
+    //         username: opt.user_id,
+    //         mspid: opt.msp_id,
+    //         cryptoContent: {
+    //             privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
+    //             signedCert: opt.signedCert
+    //         }
+    //     }
+    //     //以上代码指定了当前用户的私钥，证书等基本信息 
+    //     return sdkUtils.newKeyValueStore({
+    //         path: "/tmp/fabric-client-stateStore/"
+    //     }).then((store) => {
+    //         client.setStateStore(store)
+    //         return client.createUser(createUserOpt)
+    //     })
+    // }).then((user) => {
+    //     //org3 signature
+    //     var signature = client.signChannelConfig(config_proto);
+    //     signatures.push(signature);
 
     //create a transaction
     tx_id = client.newTransactionID();

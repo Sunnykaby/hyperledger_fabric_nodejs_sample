@@ -120,7 +120,7 @@ var FabricConfigBuilder = class {
 
         groupMsp.values.AnchorPeers = anchors;
 
-        // groupMsp.version = "1";
+        //groupMsp.version = "1";
 
 
         return groupMsp;
@@ -128,6 +128,20 @@ var FabricConfigBuilder = class {
 
     buildConsortiumGroup() {
         return this.buildGroupMSP();
+    }
+
+    buildApplicationPolicy(channelCreatorMSPID) {
+        var targetPolicy = "/Channel/Application/" + channelCreatorMSPID + "/Admins";
+        var creatorModPolicy = {
+            mod_policy: "Admins",
+            policy: {
+                type: 3,
+                value: {
+                    sub_policy: "/Channel/Application/"+channelCreatorMSPID+"/Admins"
+                }
+            }
+        };
+        return creatorModPolicy;
     }
 
 };
