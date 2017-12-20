@@ -11,16 +11,16 @@ const MSP_KEY = "MSP";
 var FabricConfigBuilder = class {
     constructor() {
         // Fabric config consits by group, value and policy
-        this.name  = null;
+        this.name = null;
         this.mspid = null;
-        this.msp   = null;
+        this.msp = null;
         this.anchor_peers = [];
     }
 
     addOrganization(name, mspid, msp) {
-        this.name  = name;
+        this.name = name;
         this.mspid = mspid;
-        this.msp   = msp;
+        this.msp = msp;
     }
 
     addAnchorPeer(host, port) {
@@ -40,14 +40,14 @@ var FabricConfigBuilder = class {
 
     buildGroupMSP() {
         var memberPolicy = {
-            mod_policy : "Admins",
-            policy : {
-                type : 1,
-                value : {
+            mod_policy: "Admins",
+            policy: {
+                type: 1,
+                value: {
                     identities: [
                         {
                             principal: {
-                                msp_identifier: this.mspid 
+                                msp_identifier: this.mspid
                             }
                         }
                     ],
@@ -65,14 +65,14 @@ var FabricConfigBuilder = class {
             }
         };
         var adminPolicy = {
-            mod_policy : "Admins",
-            policy : {
-                type : 1,
-                value : {
+            mod_policy: "Admins",
+            policy: {
+                type: 1,
+                value: {
                     identities: [
                         {
                             principal: {
-                                msp_identifier: this.mspid, 
+                                msp_identifier: this.mspid,
                                 role: "ADMIN"
                             }
                         }
@@ -92,9 +92,9 @@ var FabricConfigBuilder = class {
         };
 
         var policies = {};
-        policies[ADMIN_POLICY_KEY] = adminPolicy; 
-        policies[READER_POLICY_KEY] = memberPolicy; 
-        policies[WRITER_POLICY_KEY] = memberPolicy; 
+        policies[ADMIN_POLICY_KEY] = adminPolicy;
+        policies[READER_POLICY_KEY] = memberPolicy;
+        policies[WRITER_POLICY_KEY] = memberPolicy;
 
         var values = {};
         values[MSP_KEY] = this.msp;
@@ -102,9 +102,24 @@ var FabricConfigBuilder = class {
         var groupMsp = {};
 
         groupMsp.mod_policy = "Admins";
-        groupMsp.policies   = policies;
-        groupMsp.values     = values;
+        groupMsp.policies = policies;
+        groupMsp.values = values;
 
+        return groupMsp;
+    }
+
+    buildAnchor() {
+        var values = {};
+        var groupMsp = {};
+        groupMsp.values = values;
+        var anchors = {
+            mod_policy: "Admins",
+            value: {
+                anchor_peers: this.anchor_peers
+            }
+        };
+
+        groupMsp.values.AnchorPeers = anchors;
         return groupMsp;
     }
 
@@ -130,20 +145,56 @@ var FabricConfigBuilder = class {
         return this.buildGroupMSP();
     }
 
-    buildApplicationPolicy(channelCreatorMSPID) {
-        var targetPolicy = "/Channel/Application/" + channelCreatorMSPID + "/Admins";
-        var creatorModPolicy = {
-            mod_policy: "Admins",
-            policy: {
-                type: 3,
-                value: {
-                    sub_policy: "/Channel/Application/"+channelCreatorMSPID+"/Admins"
+    buildApplicationPolicy(type, channelCreatorMSPID, isAdmin) {
+        switch (type) {
+            case "IMPLICIT":
+                var targetPolicy = "/Channel/Application/" + channelCreatorMSPID + "/Admins";
+                var creatorModPolicy = {
+                    mod_policy: "Admins",
+                    policy: {
+                        type: 3,
+                        value: {
+                            sub_policy: "/Channel/Application/" + channelCreatorMSPID + "/Admins"
+                        }
+                    }
+                };
+                return creatorModPolicy;
+                break;
+            case "SIGNATURE":
+                var creatorPolicy = {
+                    mod_policy: "Admins",
+                    policy: {
+                        type: 1,
+                        value: {
+                            identities: [
+                                {
+                                    principal: {
+                                        msp_identifier: channelCreatorMSPID
+                                    }
+                                }
+                            ],
+                            rule: {
+                                n_out_of: {
+                                    n: 1,
+                                    rules: [
+                                        {
+                                            signed_by: 0
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                };
+                if (isAdmin) {
+                    creatorPolicy.policy.value.identities[0].principal["role"] = "ADMIN";
                 }
-            }
-        };
-        return creatorModPolicy;
-    }
+                return creatorPolicy;
+                break;
+            default: break;
+        }
 
+    }
 };
 
 module.exports = FabricConfigBuilder;

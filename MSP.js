@@ -20,6 +20,18 @@ var MSP = class {
         this.config = null;
     }
 
+    loadNul(){
+        var tmpcfg = {};
+        tmpcfg.admins = [""];
+        tmpcfg.root_certs = [""];
+        tmpcfg.tls_root_certs = [""];
+        
+        tmpcfg.crypto_config = this.getDefaultCryptoConfig();
+        tmpcfg.name = this.mspid;
+
+        this.config = tmpcfg;
+    }
+
     load(dir) {
         var cacertDir = path.join(dir, CACERTS)
         var admincertDir = path.join(dir, ADMINCERTS)

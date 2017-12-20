@@ -84,17 +84,6 @@
 							}
 						},
 						"values": {
-							"AnchorPeers": {
-								"mod_policy": "Admins",
-								"value": {
-									"anchor_peers": [
-										{
-											"host": "peer0.org1.example.com",
-											"port": 7051
-										}
-									]
-								}
-							},
 							"MSP": {
 								"mod_policy": "Admins",
 								"value": {
@@ -116,8 +105,7 @@
 									}
 								}
 							}
-						},
-						"version": "1"
+						}
 					},
 					"Org2MSP": {
 						"mod_policy": "Admins",
@@ -200,17 +188,6 @@
 							}
 						},
 						"values": {
-							"AnchorPeers": {
-								"mod_policy": "Admins",
-								"value": {
-									"anchor_peers": [
-										{
-											"host": "peer0.org2.example.com",
-											"port": 7051
-										}
-									]
-								}
-							},
 							"MSP": {
 								"mod_policy": "Admins",
 								"value": {
@@ -232,11 +209,10 @@
 									}
 								}
 							}
-						},
-						"version": "1"
+						}
 					}
 				},
-				"mod_policy": "Admins",
+				"mod_policy": "Creator",
 				"policies": {
 					"Admins": {
 						"mod_policy": "Admins",
@@ -248,21 +224,87 @@
 							}
 						}
 					},
+					"Creator": {
+						"mod_policy": "Admins",
+						"policy": {
+							"type": 1,
+							"value": {
+								"identities": [
+									{
+										"principal": {
+											"msp_identifier": "Org1MSP",
+											"role": "ADMIN"
+										}
+									}
+								],
+								"rule": {
+									"n_out_of": {
+										"n": 1,
+										"rules": [
+											{
+												"signed_by": 0
+											}
+										]
+									}
+								}
+							}
+						}
+					},
 					"Readers": {
 						"mod_policy": "Admins",
 						"policy": {
-							"type": 3,
+							"type": 1,
 							"value": {
-								"sub_policy": "Readers"
+								"identities": [
+									{
+										"principal": {
+											"msp_identifier": "Org1MSP"
+										}
+									},
+									{
+										"principal": {
+											"msp_identifier": "Org2MSP"
+										}
+									}
+								],
+								"rule": {
+									"n_out_of": {
+										"n": 1,
+										"rules": [
+											{
+												"signed_by": 0
+											},
+											{
+												"signed_by": 1
+											}
+										]
+									}
+								}
 							}
 						}
 					},
 					"Writers": {
 						"mod_policy": "Admins",
 						"policy": {
-							"type": 3,
+							"type": 1,
 							"value": {
-								"sub_policy": "Writers"
+								"identities": [
+									{
+										"principal": {
+											"msp_identifier": "Org1MSP"
+										}
+									}
+								],
+								"rule": {
+									"n_out_of": {
+										"n": 1,
+										"rules": [
+											{
+												"signed_by": 0
+											}
+										]
+									}
+								}
 							}
 						}
 					}
@@ -501,5 +543,5 @@
 			}
 		}
 	},
-	"sequence": "3"
+	"sequence": "1"
 }

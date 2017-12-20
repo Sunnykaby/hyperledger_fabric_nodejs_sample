@@ -32,7 +32,7 @@ var orderer_opt = va.getOptions(va_opt_type.ORDERER);
 var user_options = va.getOptions(va_opt_type.ORG1_I);
 var add_opt = va.getOptions(va_opt_type.ORG3_I);
 // var tarChannel = 'testchainid';
-var tarChannel = add_opt.channel_id;
+var tarChannel = "mychannel3";
 var consortium = "SampleConsortium";
 var configtx = new configtxlator();
 
@@ -119,20 +119,24 @@ Promise.resolve().then(() => {
     var mspid = add_opt.msp_id;
     var msp = new MSP(add_opt.msp_id);
     msp.load(mspdir);
+    // msp.loadNul();
     var builder = new FabricConfigBuilder();
     builder.addOrganization(name, mspid, msp.getMSP());
     builder.addAnchorPeer(add_opt.server_hostname, add_opt.server_port);
     //builder.addAnchorPeerArray(anchors);
 
     var org_app = builder.buildApplicationGroup();
-    // var creator_mod_policy = builder.buildApplicationPolicy("Org1MSP");
+    // var org_app = builder.buildAnchor();
+    
+    // var creator_mod_policy = builder.buildApplicationPolicy("SIGNATURE","Org1MSP",true);
     //add the new group into the app groups(app channel)
-    // updated_config.channel_group.groups.Application.groups[name] = org_app;
+    updated_config.channel_group.groups.Application.groups[name] = org_app;
+    // updated_config.channel_group.groups.Application.groups[name] = {};
     // delete updated_config.channel_group.groups.Application.groups[name];
     // add the new policy 
     // updated_config.channel_group.groups.Application.policies["Creator"] = creator_mod_policy;
     // change the policy
-    // updated_config.channel_group.groups.Application.mod_policy = "Creator";
+    // updated_config.channel_group.groups.Application.mod_policy = "Admins";
     //change the policy 
     // updated_config.channel_group.groups.Application.policies.Admins.policy.value.rule = "ANY";
     // updated_config.channel_group.groups.Application.mod_policy = "Writers";
@@ -158,30 +162,7 @@ Promise.resolve().then(() => {
     signatures.push(signature);
 
     //get orderer
-//     var opt = orderer_opt;
-//     var createUserOpt = {
-//         username: opt.user_id,
-//         mspid: opt.msp_id,
-//         cryptoContent: {
-//             privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
-//             signedCert: opt.signedCert
-//         }
-//     }
-//     //以上代码指定了当前用户的私钥，证书等基本信息 
-//     return sdkUtils.newKeyValueStore({
-//         path: "/tmp/fabric-client-stateStore/"
-//     }).then((store) => {
-//         client.setStateStore(store)
-//         return client.createUser(createUserOpt)
-//     })
-// }).then((user) => {
-//     //orderer signature
-//     var signature = client.signChannelConfig(config_proto);
-//     signatures.push(signature);
-
-
-    //get org2 signature
-    var opt = va.getOptions(va_opt_type.ORG2_I);
+    var opt = orderer_opt;
     var createUserOpt = {
         username: opt.user_id,
         mspid: opt.msp_id,
@@ -198,12 +179,35 @@ Promise.resolve().then(() => {
         return client.createUser(createUserOpt)
     })
 }).then((user) => {
-    //org2 signature
+    //orderer signature
     var signature = client.signChannelConfig(config_proto);
     signatures.push(signature);
 
+
+    //get org2 signature
+//     var opt = va.getOptions(va_opt_type.ORG2_I);
+//     var createUserOpt = {
+//         username: opt.user_id,
+//         mspid: opt.msp_id,
+//         cryptoContent: {
+//             privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
+//             signedCert: opt.signedCert
+//         }
+//     }
+//     //以上代码指定了当前用户的私钥，证书等基本信息 
+//     return sdkUtils.newKeyValueStore({
+//         path: "/tmp/fabric-client-stateStore/"
+//     }).then((store) => {
+//         client.setStateStore(store)
+//         return client.createUser(createUserOpt)
+//     })
+// }).then((user) => {
+//     //org2 signature
+//     var signature = client.signChannelConfig(config_proto);
+//     signatures.push(signature);
+
     //     //get org3
-    //     var opt = options_org3_i;
+    //     var opt = va.getOptions(va_opt_type.ORG3_I);
     //     var createUserOpt = {
     //         username: opt.user_id,
     //         mspid: opt.msp_id,
