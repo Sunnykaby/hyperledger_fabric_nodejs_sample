@@ -138,8 +138,8 @@ Promise.resolve().then(() => {
 
     //for sign
     //get orderer signature
-    var signature = client.signChannelConfig(config_proto);
-    signatures.push(signature);
+    // var signature = client.signChannelConfig(config_proto);
+    // signatures.push(signature);
 
     //for sign test
 

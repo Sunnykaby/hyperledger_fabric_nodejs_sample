@@ -13,7 +13,7 @@ var channel = {};
 var client = null;
 var targets = [];
 var tx_id = null;
-var options = va.getOptions(opt_type.ORG3_I);
+var options = va.getOptions(opt_type.ORG1_I);
 const getKeyFilesInDir = (dir) => {
     //该函数用于找到keystore目录下的私钥文件的路径 
     const files = fs.readdirSync(dir)

@@ -193,7 +193,6 @@ var FabricConfigBuilder = class {
                 break;
             default: break;
         }
-
     }
 };
 

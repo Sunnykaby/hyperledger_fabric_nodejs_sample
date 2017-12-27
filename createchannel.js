@@ -20,7 +20,7 @@ var configDir = {
 };
 
 var channelConfig = "/home/sdy/channelConfig";
-var new_channelName = "mychannel3";
+var new_channelName = "mychannel4";
 
 var mspdir = "/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/msp";
 
@@ -69,6 +69,26 @@ var policies = {
         ]
       }
 
+}
+
+function getCreatorPolicy(creatorId){
+    var fab = new FabricConfigBuilder();
+    var creator_pol = fab.buildApplicationPolicy("SIGNATURE",creatorId,true);
+    return creator_pol;
+}
+
+
+
+function getOrderPolicyMod(){
+    var creator_pol = getCreatorPolicy(user_options.msp_id);
+    var orderer_Config = {
+        mod_policy:"Creator",
+        policies:{},
+        version:1
+    }
+    orderer_Config.policies["Creator"] = creator_pol;
+
+    return orderer_Config;
 }
 
 function changePolicy(policy_group){
@@ -167,6 +187,8 @@ Promise.resolve().then(() => {
     var creator_pol = fab.buildApplicationPolicy("SIGNATURE",user_options.msp_id,true);
     policy_group["Creator"] = creator_pol;
     envelope.payload.data.config_update.write_set.groups.Application.mod_policy = "Creator";
+    //change the orderer cofnig
+    envelope.payload.data.config_update.write_set.groups["Orderer"] = getOrderPolicyMod();
     // envelope.payload.data.config_update.write_set.groups.Application["policies"] = 
     //
     updated_config_json = JSON.stringify(envelope, null, 4);
@@ -181,55 +203,26 @@ Promise.resolve().then(() => {
     var signature = client.signChannelConfig(config_proto);
     signatures.push(signature);
 
-    //for sign test
-
-    //get org2
-//     var opt = options_org2_i;
-//     var createUserOpt = {
-//         username: opt.user_id,
-//         mspid: opt.msp_id,
-//         cryptoContent: {
-//             privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
-//             signedCert: opt.signedCert
-//         }
-//     }
-//     //以上代码指定了当前用户的私钥，证书等基本信息 
-//     return sdkUtils.newKeyValueStore({
-//         path: "/tmp/fabric-client-stateStore/"
-//     }).then((store) => {
-//         client.setStateStore(store)
-//         return client.createUser(createUserOpt)
-//     })
-// }).then((user) =>{
-
-    //sign
-    //orderer signature
-    // var signature = client.signChannelConfig(config_proto);
-    // signatures.push(signature);
-
-
     //orderer sign
-    //     var opt = options_org2_i;
-//     var createUserOpt = {
-//         username: opt.user_id,
-//         mspid: opt.msp_id,
-//         cryptoContent: {
-//             privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
-//             signedCert: opt.signedCert
-//         }
-//     }
-//     //以上代码指定了当前用户的私钥，证书等基本信息 
-//     return sdkUtils.newKeyValueStore({
-//         path: "/tmp/fabric-client-stateStore/"
-//     }).then((store) => {
-//         client.setStateStore(store)
-//         return client.createUser(createUserOpt)
-//     })
-// }).then((user) =>{
-    //for sign test
-    //org2 signature
-    // var signature = client.signChannelConfig(config_proto);
-    // signatures.push(signature);
+    var opt = orderer_opt;
+    var createUserOpt = {
+        username: opt.user_id,
+        mspid: opt.msp_id,
+        cryptoContent: {
+            privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
+            signedCert: opt.signedCert
+        }
+    }
+    //以上代码指定了当前用户的私钥，证书等基本信息 
+    return sdkUtils.newKeyValueStore({
+        path: "/tmp/fabric-client-stateStore/"
+    }).then((store) => {
+        client.setStateStore(store)
+        return client.createUser(createUserOpt)
+    })
+}).then((user) =>{
+    var signature = client.signChannelConfig(config_proto);
+    signatures.push(signature);
 
     tx_id = client.newTransactionID();
     console.log("Assigning transaction_id: ", tx_id._transaction_id);
@@ -260,3 +253,5 @@ Promise.resolve().then(() => {
     logger.error('Exception on update channel: ' + err.stack ? err.stack : err);
     return Promise.reject(err);
 });
+
+

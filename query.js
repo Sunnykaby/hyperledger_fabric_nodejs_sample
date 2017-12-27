@@ -12,7 +12,7 @@ var va_opt_type = va.getOptType();
 
 var channel = {}; 
 var client = null; 
-var options = va.getOptions(va_opt_type.ORG3_Q);//choose the target peer
+var options = va.getOptions(va_opt_type.ORG1_Q);//choose the target peer
 const getKeyFilesInDir = (dir) => { 
 //该函数用于找到keystore目录下的私钥文件的路径 
     var files = fs.readdirSync(dir) 
