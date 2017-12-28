@@ -19,24 +19,21 @@ var configDir = {
 };
 
 var channelConfig = "/home/sdy/channelConfig";
-var new_channelName = "mychannel2";
+var new_channelName = "mychannel3";
 var mspdir = "/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/msp";
 
 var va = new VariesApp();
 var configTool = new ConfigTool();
 var nodeTool = new NodeTool();
 var cryptoTool = new CryptoTool();
-var cryptoTool = null;
 var va_opt_type = va.getOptType();
 var channel = {};
 var client = null;
 var orderer = null;
-var targets = [];
 var tx_id = null;
 var orderer_opt = va.getOptions(va_opt_type.ORDERER);
 var user_options = va.getOptions(va_opt_type.ORG1);
 var tarChannel = new_channelName;
-var consortium = "SampleConsortium";
 var updated_config_proto = null;
 var updated_config_json = null;
 var signatures = [];

@@ -26,7 +26,6 @@ var mspdir = "/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cl
 var configTool = new ConfigTool();
 var nodeTool = new NodeTool();
 var cryptoTool = new CryptoTool();
-var configtx = new configtxlator();
 var va = new VariesApp();
 
 var channel = {};
@@ -35,25 +34,10 @@ var orderer = null;
 var tx_id = null;
 var va_opt_type = va.getOptType();
 var orderer_opt = va.getOptions(va_opt_type.ORDERER);
-var user_options = va.getOptions(va_opt_type.ORG1_I);
-var add_opt = va.getOptions(va_opt_type.ORG3_I);
+var user_options = va.getOptions(va_opt_type.ORG1);
+var add_opt = va.getOptions(va_opt_type.ORDERER);
 // var tarChannel = 'testchainid';
-var tarChannel = "mychannel";
-var consortium = "SampleConsortium";
-
-
-const getKeyFilesInDir = (dir) => {
-    //该函数用于找到keystore目录下的私钥文件的路径 
-    const files = fs.readdirSync(dir)
-    const keyFiles = []
-    files.forEach((file_name) => {
-        let filePath = path.join(dir, file_name)
-        if (file_name.endsWith('_sk')) {
-            keyFiles.push(filePath)
-        }
-    })
-    return keyFiles
-}
+var tarChannel = "mychannel2";
 
 var config_proto = null;
 var original_config_proto = null;
@@ -67,58 +51,17 @@ var request = null;
 Promise.resolve().then(() => {
     console.log("Load privateKey and signedCert");
     client = new hfc();
-    var createUserOpt = {
-        username: user_options.user_id,
-        mspid: user_options.msp_id,
-        cryptoContent: {
-            privateKey: getKeyFilesInDir(user_options.privateKeyFolder)[0],
-            signedCert: user_options.signedCert
-        }
-    }
-    //以上代码指定了当前用户的私钥，证书等基本信息 
-    return sdkUtils.newKeyValueStore({
-        path: "/tmp/fabric-client-stateStore/"
-    }).then((store) => {
-        client.setStateStore(store)
-        return client.createUser(createUserOpt)
-    })
+    return cryptoTool.getUserWithKeys(client, user_options);
 }).then((user) => {
     channel = client.newChannel(tarChannel);
-    let data = fs.readFileSync(user_options.peer_tls_cacerts);
-    let peer = client.newPeer(user_options.peer_url,
-        {
-            pem: Buffer.from(data).toString(),
-            'ssl-target-name-override': user_options.server_hostname
-        }
-    );
-    //因为启用了TLS，所以上面的代码就是指定Peer的TLS的CA证书 
+    var peer = nodeTool.getPeer(client, user_options);
     channel.addPeer(peer);
-    //连接Orderer的时候也启用了TLS，也是同样的处理方法 
-    let odata = fs.readFileSync(orderer_opt.orderer_tls_cacerts);
-    let caroots = Buffer.from(odata).toString();
-    orderer = client.newOrderer(orderer_opt.orderer_url, {
-        'pem': caroots,
-        'ssl-target-name-override': "orderer.example.com"
-    });
+    orderer = nodeTool.getOrderer(client, orderer_opt);
     channel.addOrderer(orderer);
     return;
 }).then(() => {
-    //get the config_envelope,
-    return channel.getChannelConfig();
-}).then((config_envelope) => {
-    //extract the config data
-    original_config_proto = config_envelope.config.toBuffer();
-    return configtx.decode(original_config_proto, 'common.Config');
-}).then((original_config_json) => {
-    logger.info(' original_config_json :: %s', original_config_json);
-    //log the config json ofr ori and update
-    var orig_file = path.join(__dirname, configDir.path + "/" + tarChannel + "_" + configDir.origin_config);
-    fs.writeFileSync(orig_file, original_config_json);
-    // make a copy of the original so we can edit it
-    updated_config_json = original_config_json;
-    //json -> obj
-    var updated_config = JSON.parse(updated_config_json);
-
+    return configTool.loadConfigByChannel(channel, null);
+}).then((updated_config) => {
     // Build new organization group
     var name = add_opt.msp_id;
     var mspid = add_opt.msp_id;
@@ -132,106 +75,26 @@ Promise.resolve().then(() => {
 
     var org_app = builder.buildApplicationGroup();
     // var org_app = builder.buildAnchor();
-    
+
     // var creator_mod_policy = builder.buildApplicationPolicy("SIGNATURE","Org1MSP",true);
     //add the new group into the app groups(app channel)
+    configTool.addOrgToAppliacitionGroups(name, org_app);
     updated_config.channel_group.groups.Application.groups[name] = org_app;
-    // updated_config.channel_group.groups.Application.groups[name] = {};
-    // delete updated_config.channel_group.groups.Application.groups[name];
-    // add the new policy 
-    // updated_config.channel_group.groups.Application.policies["Creator"] = creator_mod_policy;
-    // change the policy
-    // updated_config.channel_group.groups.Application.mod_policy = "Admins";
-    //change the policy 
-    // updated_config.channel_group.groups.Application.policies.Admins.policy.value.rule = "ANY";
-    // updated_config.channel_group.groups.Application.mod_policy = "Writers";
-    // updated_config.channel_group.groups.Application.policies.Writers.policy.value.sub_policy = "/Channel/Application/Org1MSP/Admins";
-    // updated_config.channel_group.groups.Application.mod_policy = "Admins";
-    // updated_config.channel_group.groups.Application.policies.Writers.policy.value.sub_policy = "Admins";
-    updated_config_json = JSON.stringify(updated_config);//obj -> json
-    logger.info(' updated_config_json :: %s', updated_config_json);
-    //log the config json of update
-    var update_file = path.join(__dirname, configDir.path + "/" + tarChannel + "_" + configDir.update_config);
-    fs.writeFileSync(update_file, updated_config_json);
-    return configtx.encode(updated_config_json, 'common.Config');
-}).then(updated_config_proto => {
-    return configtx.compute_delta(original_config_proto, updated_config_proto, tarChannel);
+
+    return configTool.getPreSignUpdatedConfig(tarChannel);
 }).then(config_pb => {
     config_proto = config_pb;
-
-    //for sign test
-
     //sign
     //org1 signature
     var signature = client.signChannelConfig(config_proto);
     signatures.push(signature);
 
-    //get orderer
-//     var opt = orderer_opt;
-//     var createUserOpt = {
-//         username: opt.user_id,
-//         mspid: opt.msp_id,
-//         cryptoContent: {
-//             privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
-//             signedCert: opt.signedCert
-//         }
-//     }
-//     //以上代码指定了当前用户的私钥，证书等基本信息 
-//     return sdkUtils.newKeyValueStore({
-//         path: "/tmp/fabric-client-stateStore/"
-//     }).then((store) => {
-//         client.setStateStore(store)
-//         return client.createUser(createUserOpt)
-//     })
-// }).then((user) => {
-//     //orderer signature
-//     var signature = client.signChannelConfig(config_proto);
-//     signatures.push(signature);
-
-
     //get org2 signature
-    var opt = va.getOptions(va_opt_type.ORG2_I);
-    var createUserOpt = {
-        username: opt.user_id,
-        mspid: opt.msp_id,
-        cryptoContent: {
-            privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
-            signedCert: opt.signedCert
-        }
-    }
-    //以上代码指定了当前用户的私钥，证书等基本信息 
-    return sdkUtils.newKeyValueStore({
-        path: "/tmp/fabric-client-stateStore/"
-    }).then((store) => {
-        client.setStateStore(store)
-        return client.createUser(createUserOpt)
-    })
+    return cryptoTool.getUserWithKeys(client, va.getOptions(va_opt_type.ORG2));
 }).then((user) => {
     //org2 signature
     var signature = client.signChannelConfig(config_proto);
     signatures.push(signature);
-
-    //     //get org3
-    //     var opt = va.getOptions(va_opt_type.ORG3_I);
-    //     var createUserOpt = {
-    //         username: opt.user_id,
-    //         mspid: opt.msp_id,
-    //         cryptoContent: {
-    //             privateKey: getKeyFilesInDir(opt.privateKeyFolder)[0],
-    //             signedCert: opt.signedCert
-    //         }
-    //     }
-    //     //以上代码指定了当前用户的私钥，证书等基本信息 
-    //     return sdkUtils.newKeyValueStore({
-    //         path: "/tmp/fabric-client-stateStore/"
-    //     }).then((store) => {
-    //         client.setStateStore(store)
-    //         return client.createUser(createUserOpt)
-    //     })
-    // }).then((user) => {
-    //     //org3 signature
-    //     var signature = client.signChannelConfig(config_proto);
-    //     signatures.push(signature);
 
     //create a transaction
     tx_id = client.newTransactionID();

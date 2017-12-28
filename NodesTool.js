@@ -8,8 +8,16 @@ var NodetsTool = class {
     constructor() {
     }
 
-    getPeer(opt) {
-
+    getPeer(client, opt) {
+        //因为启用了TLS，所以上面的代码就是指定Peer的TLS的CA证书 
+        let data = fs.readFileSync(opt.peer_tls_cacerts);
+        return client.newPeer(opt.peer_url,
+            {
+                pem: Buffer.from(data).toString(),
+                'ssl-target-name-override': opt.server_hostname
+            }
+        );
+        
     }
 
     getOrderer(client, opt) {
