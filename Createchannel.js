@@ -12,15 +12,8 @@ var NodeTool = require('./NodesTool.js');
 var log4js = require('log4js');
 var logger = log4js.getLogger();
 
-var configDir = {
-    path: "config",
-    origin_config: "oriCreateConfig.json",
-    update_config: "updCreateConfig.json"
-};
-
 var channelConfig = "/home/sdy/channelConfig";
-var new_channelName = "mychannel3";
-var mspdir = "/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cli/crypto-config/peerOrganizations/org3.example.com/msp";
+var new_channelName = "orderchannel";
 
 var va = new VariesApp();
 var configTool = new ConfigTool();
@@ -76,7 +69,7 @@ function getOrderPolicyMod() {
 Promise.resolve().then(() => {
     console.log("Load privateKey and signedCert");
     client = new hfc();
-    return cryptoTool.getUserWithKeys(client,user_options);
+    return cryptoTool.getUserWithKeys(client, user_options);
 }).then((user) => {
     //persist
     let envelope_bytes = fs.readFileSync(path.join(channelConfig, tarChannel + ".tx"));
@@ -106,7 +99,7 @@ Promise.resolve().then(() => {
     //     var signature = client.signChannelConfig(config_proto);
     //     signatures.push(signature);
 
-    orderer = nodeTool.getOrderer(client,orderer_opt);
+    orderer = nodeTool.getOrderer(client, orderer_opt);
 
     tx_id = client.newTransactionID();
     console.log("Assigning transaction_id: ", tx_id._transaction_id);

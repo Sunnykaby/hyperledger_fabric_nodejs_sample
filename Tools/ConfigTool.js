@@ -10,7 +10,8 @@ var configtx = new Configtxlator();
 //const var
 const TYPE = {
     COMMON_ENVELOPE: 0,
-    COMMON_CONFIG: 1
+    COMMON_CONFIG_SYS: 1,
+    COMMON_CONFIG_APP: 2
 };
 
 var ConfigTool = class {
@@ -26,17 +27,29 @@ var ConfigTool = class {
         this.channelName = null;
     }
 
+    getType(){
+        return TYPE;
+    }
+
     /**
      * Get lasted channel config data from Config Envelope
      * @param {*channel object of fabric} channel 
      * @param {*} type 
      */
-    loadConfigByChannel(channel, type) {
+    loadConfigByChannel(channel, type_channel) {
         return channel.getChannelConfig().then(config_envelope => {
             this.origin_config_proto = config_envelope.config.toBuffer();
             return configtx.decode(this.origin_config_proto, 'common.Config');
         }).then((origin_config_json) => {
             // logger.info(' original_config_json :: %s', original_config_json);
+            switch (type_channel) {
+                case TYPE.COMMON_CONFIG_SYS:
+                    fs.writeFileSync(path.resolve("config/sysChannelOrigin.json"), origin_config_json);
+                    break;
+                case TYPE.COMMON_CONFIG_APP:
+                    fs.writeFileSync(path.resolve("config/appChannelOrigin.json"), origin_config_json);
+                    break;
+            }
             this.origin_config = JSON.parse(origin_config_json);// json -> obj
             this.update_config = this.origin_config;
             return Promise.resolve(this.update_config);
@@ -51,9 +64,17 @@ var ConfigTool = class {
      * Get the updated config proto data which needs be signed for orderer
      * @param {* The channel name to update} channelName 
      */
-    getPreSignUpdatedConfig(channelName) {
+    getPreSignUpdatedConfig(channelName, type_channel) {
         if (channelName == null) channelName = this.channelName;
         var update_config_json = JSON.stringify(this.update_config);
+        switch (type_channel) {
+            case TYPE.COMMON_CONFIG_SYS:
+                fs.writeFileSync(path.resolve("config/sysChannelUpdate.json"), update_config_json);
+                break;
+            case TYPE.COMMON_CONFIG_APP:
+                fs.writeFileSync(path.resolve("config/appChannelUpdate.json"), update_config_json);
+                break;
+        }
         return configtx.encode(update_config_json, 'common.Config').then(update_config_proto => {
             this.update_config_proto = update_config_proto;
             return configtx.compute_delta(this.origin_config_proto, this.update_config_proto, channelName);
@@ -72,6 +93,7 @@ var ConfigTool = class {
      */
     getPresignChannelCreateConfig(client) {
         var update_envelope_json = JSON.stringify(this.update_envelope);
+        fs.writeFileSync(path.resolve("config/creationUpdate.json"), update_envelope_json);
         return configtx.encode(update_envelope_json, 'common.Envelope').then(update_envelope_proto => {
             this.update_config_proto = update_envelope_proto;
             var config_proto = client.extractChannelConfig(this.update_config_proto);
@@ -89,6 +111,7 @@ var ConfigTool = class {
      */
     loadConfigByTx(channelTxEnvelope) {
         return configtx.decode(channelTxEnvelope, 'common.Envelope').then((config_envelope_json) => {
+            fs.writeFileSync(path.resolve("config/creationOrigin.json"), config_envelope_json);
             this.origin_envelope = JSON.parse(config_envelope_json);
             this.update_envelope = this.origin_envelope;
             return Promise.resolve(this.origin_envelope);

@@ -3,7 +3,6 @@
 var hfc = require('fabric-client');
 var path = require('path');
 var util = require('util');
-var sdkUtils = require('fabric-client/lib/utils');
 const fs = require('fs');
 var VariesApp = require('./Varies.js');
 var MSP = require('./Tools/MSP.js');
@@ -37,7 +36,7 @@ var orderer_opt = va.getOptions(va_opt_type.ORDERER);
 var user_options = va.getOptions(va_opt_type.ORG1);
 var add_opt = va.getOptions(va_opt_type.ORDERER);
 // var tarChannel = 'testchainid';
-var tarChannel = "mychannel2";
+var tarChannel = "mychannel3";
 
 var config_proto = null;
 var original_config_proto = null;
@@ -60,28 +59,27 @@ Promise.resolve().then(() => {
     channel.addOrderer(orderer);
     return;
 }).then(() => {
-    return configTool.loadConfigByChannel(channel, null);
+    return configTool.loadConfigByChannel(channel, configTool.getType().COMMON_CONFIG_APP);
 }).then((updated_config) => {
     // Build new organization group
-    var name = add_opt.msp_id;
+    var name = add_opt.org_name;
     var mspid = add_opt.msp_id;
     var msp = new MSP(add_opt.msp_id);
     msp.load(mspdir);
     // msp.loadNul();
     var builder = new FabricConfigBuilder();
     builder.addOrganization(name, mspid, msp.getMSP());
-    builder.addAnchorPeer(add_opt.server_hostname, add_opt.server_port);
+    // builder.addAnchorPeer(add_opt.server_hostname, add_opt.server_port);
     //builder.addAnchorPeerArray(anchors);
 
-    var org_app = builder.buildApplicationGroup();
+    var org_app = builder.buildApplicationGroup(false);
     // var org_app = builder.buildAnchor();
 
     // var creator_mod_policy = builder.buildApplicationPolicy("SIGNATURE","Org1MSP",true);
     //add the new group into the app groups(app channel)
     configTool.addOrgToAppliacitionGroups(name, org_app);
-    updated_config.channel_group.groups.Application.groups[name] = org_app;
 
-    return configTool.getPreSignUpdatedConfig(tarChannel);
+    return configTool.getPreSignUpdatedConfig(tarChannel,configTool.getType().COMMON_CONFIG_APP);
 }).then(config_pb => {
     config_proto = config_pb;
     //sign

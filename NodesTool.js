@@ -17,7 +17,7 @@ var NodetsTool = class {
                 'ssl-target-name-override': opt.server_hostname
             }
         );
-        
+
     }
 
     getOrderer(client, opt) {

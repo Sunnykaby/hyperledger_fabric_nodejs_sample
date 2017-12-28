@@ -123,20 +123,19 @@ var FabricConfigBuilder = class {
         return groupMsp;
     }
 
-    buildApplicationGroup() {
+    buildApplicationGroup(isAnchor) {
         var groupMsp = this.buildGroupMSP();
-
-        var anchors = {
-            mod_policy: "Admins",
-            value: {
-                anchor_peers: this.anchor_peers
-            }
-        };
-
-        groupMsp.values.AnchorPeers = anchors;
+        if(isAnchor){
+            var anchors = {
+                mod_policy: "Admins",
+                value: {
+                    anchor_peers: this.anchor_peers
+                }
+            };
+            groupMsp.values.AnchorPeers = anchors;
+        }
 
         //groupMsp.version = "1";
-
 
         return groupMsp;
     }

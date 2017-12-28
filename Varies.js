@@ -28,6 +28,7 @@ var VariesApp = class {
         //for create user of org1
         this.options_org1 = {
             user_id: 'Admin@org1.example.com',
+            org_name:"Org1MSP",
             msp_id: 'Org1MSP',
             channel_id: 'mychannel',
             chaincode_id: 'mycc',
@@ -43,6 +44,7 @@ var VariesApp = class {
         //for create user of org2
         this.options_org2 = {
             user_id: 'Admin@org2.example.com',
+            org_name:"Org2MSP",
             msp_id: 'Org2MSP',
             channel_id: 'mychannel',
             chaincode_id: 'mycc',
@@ -58,6 +60,7 @@ var VariesApp = class {
         //for create user of org3
         this.options_org3 = {
             user_id: 'Admin@org3.example.com',
+            org_name:"Org3MSP",
             msp_id: 'Org3MSP',
             channel_id: 'mychannel',
             chaincode_id: 'mycc',
@@ -73,6 +76,7 @@ var VariesApp = class {
         //for create user of orderer
         this.options_orderer = {
             user_id: 'Admin@example.com',
+            org_name:"OrdererOrg",
             msp_id: 'OrdererMSP',
             channel_id: 'mychannel',
             chaincode_id: 'mycc',
