@@ -25,6 +25,7 @@ var mspdir = "/home/sdy/gopath/src/github.com/hyperledger/fabric/examples/e2e_cl
 var va = new VariesApp();
 var configTool = new ConfigTool();
 var nodeTool = new NodeTool();
+var cryptoTool = new CryptoTool();
 var cryptoTool = null;
 var va_opt_type = va.getOptType();
 var channel = {};
@@ -36,7 +37,6 @@ var orderer_opt = va.getOptions(va_opt_type.ORDERER);
 var user_options = va.getOptions(va_opt_type.ORG1);
 var tarChannel = new_channelName;
 var consortium = "SampleConsortium";
-var config_proto = null;
 var updated_config_proto = null;
 var updated_config_json = null;
 var signatures = [];
@@ -79,7 +79,6 @@ function getOrderPolicyMod() {
 Promise.resolve().then(() => {
     console.log("Load privateKey and signedCert");
     client = new hfc();
-    cryptoTool = new CryptoTool();
     return cryptoTool.getUserWithKeys(client,user_options);
 }).then((user) => {
     //persist

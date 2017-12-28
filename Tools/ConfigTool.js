@@ -34,7 +34,7 @@ var ConfigTool = class {
     loadConfigByChannel(channel, type) {
         return channel.getChannelConfig().then(config_envelope => {
             this.origin_config_proto = config_envelope.config.toBuffer();
-            return configtx.decode(this.original_config_proto, 'common.Config');
+            return configtx.decode(this.origin_config_proto, 'common.Config');
         }).then((origin_config_json) => {
             // logger.info(' original_config_json :: %s', original_config_json);
             this.origin_config = JSON.parse(origin_config_json);// json -> obj
@@ -54,9 +54,9 @@ var ConfigTool = class {
     getPreSignUpdatedConfig(channelName) {
         if (channelName == null) channelName = this.channelName;
         var update_config_json = JSON.stringify(this.update_config);
-        return configtx.encode(updated_config_json, 'common.Config').then(update_config_proto => {
+        return configtx.encode(update_config_json, 'common.Config').then(update_config_proto => {
             this.update_config_proto = update_config_proto;
-            return configtx.compute_delta(this.original_config_proto, this.updated_config_proto, channelName);
+            return configtx.compute_delta(this.origin_config_proto, this.update_config_proto, channelName);
         }).then((config_pb) => {
             return Promise.resolve(config_pb);
         }, err => {
