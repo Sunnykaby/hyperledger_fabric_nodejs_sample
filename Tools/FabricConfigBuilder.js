@@ -134,7 +134,6 @@ var FabricConfigBuilder = class {
             };
             groupMsp.values.AnchorPeers = anchors;
         }
-
         //groupMsp.version = "1";
 
         return groupMsp;

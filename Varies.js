@@ -39,7 +39,8 @@ var VariesApp = class {
             signedCert: this.baseCryptoDir + 'peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts/Admin@org1.example.com-cert.pem',
             peer_tls_cacerts: this.baseCryptoDir + 'peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt',
             orderer_tls_cacerts: this.baseCryptoDir + 'ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt',
-            server_hostname: "peer0.org1.example.com"
+            server_hostname: "peer0.org1.example.com",
+            msp_dir: this.baseCryptoDir + "peerOrganizations/org1.example.com/msp"
         };
         //for create user of org2
         this.options_org2 = {
@@ -55,7 +56,8 @@ var VariesApp = class {
             signedCert: this.baseCryptoDir + 'peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts/Admin@org2.example.com-cert.pem',
             peer_tls_cacerts: this.baseCryptoDir + 'peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt',
             orderer_tls_cacerts: this.baseCryptoDir + 'ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt',
-            server_hostname: "peer0.org2.example.com"
+            server_hostname: "peer0.org2.example.com",
+            msp_dir: this.baseCryptoDir + "peerOrganizations/org2.example.com/msp"
         };
         //for create user of org3
         this.options_org3 = {
@@ -71,7 +73,8 @@ var VariesApp = class {
             signedCert: this.baseCryptoDir + 'peerOrganizations/org3.example.com/users/Admin@org3.example.com/msp/signcerts/Admin@org3.example.com-cert.pem',
             peer_tls_cacerts: this.baseCryptoDir + 'peerOrganizations/org3.example.com/peers/peer0.org3.example.com/tls/ca.crt',
             orderer_tls_cacerts: this.baseCryptoDir + 'ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt',
-            server_hostname: "peer0.org3.example.com"
+            server_hostname: "peer0.org3.example.com",
+            msp_dir: this.baseCryptoDir + "peerOrganizations/org3.example.com/msp"
         };
         //for create user of orderer
         this.options_orderer = {
@@ -84,7 +87,8 @@ var VariesApp = class {
             privateKeyFolder: this.baseCryptoDir + 'ordererOrganizations/example.com/users/Admin@example.com/msp/keystore',
             signedCert: this.baseCryptoDir + 'ordererOrganizations/example.com/users/Admin@example.com/msp/signcerts/Admin@example.com-cert.pem',
             orderer_tls_cacerts: this.baseCryptoDir + 'ordererOrganizations/example.com/orderers/orderer.example.com/tls/ca.crt',
-            server_hostname: "orderer.example.com"
+            server_hostname: "orderer.example.com",
+            msp_dir: this.baseCryptoDir + "ordererOrganizations/example.com/msp"
         };
     };
 
