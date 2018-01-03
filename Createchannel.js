@@ -13,7 +13,7 @@ var log4js = require('log4js');
 var logger = log4js.getLogger();
 
 var channelConfig = "/home/sdy/channelConfig";
-var new_channelName = "orderchannel";
+var new_channelName = "mychannel2";
 
 var va = new VariesApp();
 var configTool = new ConfigTool();
@@ -130,5 +130,6 @@ Promise.resolve().then(() => {
     logger.error('Exception on update channel: ' + err.stack ? err.stack : err);
     return Promise.reject(err);
 });
+
 
 

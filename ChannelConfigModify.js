@@ -24,9 +24,9 @@ var tx_id = null;
 var va_opt_type = va.getOptType();
 var orderer_opt = va.getOptions(va_opt_type.ORDERER);
 var user_options = va.getOptions(va_opt_type.ORG1);
-var add_opt = va.getOptions(va_opt_type.ORDERER);
+var add_opt = va.getOptions(va_opt_type.ORG3);
 // var tarChannel = 'testchainid';
-var tarChannel = "mychannel";
+var tarChannel = "mychannel2";
 
 var config_proto = null;
 var original_config_proto = null;
