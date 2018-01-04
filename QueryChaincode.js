@@ -1,59 +1,40 @@
 'use strict';
 
-var hfc = require('fabric-client'); 
-var path = require('path'); 
-var sdkUtils = require('fabric-client/lib/utils') 
-var fs = require('fs');
-var VariesApp = require('./varies.js'); 
+var hfc = require('fabric-client');
+var path = require('path');
+const fs = require('fs');
+var VariesApp = require('./Varies.js');
+var MSP = require('./Tools/MSP.js');
+var CryptoTool = require('./Tools/CryptoTool.js');
+var ConfigTool = require('./Tools/ConfigTool.js');
+var NodeTool = require('./NodesTool.js');
+var FabricConfigBuilder = require('./Tools/FabricConfigBuilder.js');
+var log4js = require('log4js');
+var logger = log4js.getLogger();
 
+var configTool = new ConfigTool();
+var nodeTool = new NodeTool();
+var cryptoTool = new CryptoTool();
 var va = new VariesApp();
+
+
+var channel = {};
+var client = null;
+var orderer = null;
+var tx_id = null;
 var va_opt_type = va.getOptType();
+var orderer_opt = va.getOptions(va_opt_type.ORDERER);
+var user_options = va.getOptions(va_opt_type.ORG1);
+var tarChannel = "mychannel";
 
 
-var channel = {}; 
-var client = null; 
-var options = va.getOptions(va_opt_type.ORG1_Q);//choose the target peer
-const getKeyFilesInDir = (dir) => { 
-//该函数用于找到keystore目录下的私钥文件的路径 
-    var files = fs.readdirSync(dir) 
-    var keyFiles = [] 
-    files.forEach((file_name) => { 
-        let filePath = path.join(dir, file_name) 
-        if (file_name.endsWith('_sk')) { 
-            keyFiles.push(filePath) 
-        } 
-    }) 
-    return keyFiles 
-} 
 Promise.resolve().then(() => { 
     console.log("Load privateKey and signedCert"); 
     client = new hfc(); 
-    
-    var    createUserOpt = { 
-                username: options.user_id, 
-                 mspid: options.msp_id, 
-                cryptoContent: { privateKey: getKeyFilesInDir(options.privateKeyFolder)[0], 
-  signedCert: options.signedCert } 
-        } 
-//以上代码指定了当前用户的私钥，证书等基本信息 
-return sdkUtils.newKeyValueStore({ 
-                        path: "/tmp/fabric-client-stateStore/" 
-                }).then((store) => { 
-                        client.setStateStore(store) 
-                         return client.createUser(createUserOpt) 
-                 }) 
+    return cryptoTool.getUserWithKeys(client,user_options); 
 }).then((user) => { 
-    channel = client.newChannel(options.channel_id); 
-    
-    let data = fs.readFileSync(options.tls_cacerts); 
-    let peer = client.newPeer(options.network_url, 
-         { 
-            pem: Buffer.from(data).toString(), 
-             'ssl-target-name-override': options.server_hostname 
-        } 
-    ); 
-    peer.setName("peer0"); 
-    //因为启用了TLS，所以上面的代码就是指定TLS的CA证书 
+    channel = client.newChannel(tarChannel); 
+    var peer= nodeTool.getPeer(client,user_options);
     channel.addPeer(peer); 
     return; 
 }).then(() => { 
@@ -62,7 +43,7 @@ return sdkUtils.newKeyValueStore({
     console.log("Assigning transaction_id: ", transaction_id._transaction_id); 
 //构造查询request参数 
     const request = { 
-        chaincodeId: options.chaincode_id, 
+        chaincodeId: user_options.chaincode_id, 
         txId: transaction_id, 
         fcn: 'query', 
         args: ['a'] 

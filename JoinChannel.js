@@ -23,18 +23,13 @@ var orderer = null;
 var tx_id = null;
 var va_opt_type = va.getOptType();
 var orderer_opt = va.getOptions(va_opt_type.ORDERER);
-var user_options = va.getOptions(va_opt_type.ORG1);
+var user_options = va.getOptions(va_opt_type.ORG2);
 var add_opt = va.getOptions(va_opt_type.ORDERER);
-// var tarChannel = 'testchainid';
-var tarChannel = "mychannel";
+var tarChannel = "mychannel2";
 
-var config_proto = null;
-var original_config_proto = null;
-var original_config_json = null;
-var updated_config_proto = null;
-var updated_config_json = null;
 var signatures = [];
 var request = null;
+var targets = [];
 
 
 Promise.resolve().then(() => {
@@ -46,6 +41,7 @@ Promise.resolve().then(() => {
     channel = client.newChannel(tarChannel);
     var peer = nodeTool.getPeer(client, user_options);
     channel.addPeer(peer);
+    targets.push(peer);
     orderer = nodeTool.getOrderer(client, orderer_opt);
     channel.addOrderer(orderer);
     return;
@@ -70,7 +66,7 @@ Promise.resolve().then(() => {
     logger.debug('\n***\n completed the join \n***\n');
 
     logger.debug(' response ::%j', result);
-    if (result.status && result.status === 'SUCCESS') {
+    if (result.status && result.status === '200') {
         return Promise.resolve(result.status);
     } else {
         return Promise.reject(result.status);
@@ -82,3 +78,4 @@ Promise.resolve().then(() => {
     logger.error('Exception on join channel: ' + err.stack ? err.stack : err);
     return Promise.reject(err);
 });
+``

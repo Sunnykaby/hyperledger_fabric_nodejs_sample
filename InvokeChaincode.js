@@ -2,88 +2,47 @@
 
 var hfc = require('fabric-client');
 var path = require('path');
-var util = require('util');
-var sdkUtils = require('fabric-client/lib/utils');
 const fs = require('fs');
-var VariesApp = require('./varies.js');
+var VariesApp = require('./Varies.js');
+var MSP = require('./Tools/MSP.js');
+var CryptoTool = require('./Tools/CryptoTool.js');
+var ConfigTool = require('./Tools/ConfigTool.js');
+var NodeTool = require('./NodesTool.js');
+var util = require('util');
+var FabricConfigBuilder = require('./Tools/FabricConfigBuilder.js');
+var log4js = require('log4js');
+var logger = log4js.getLogger();
 
+var configTool = new ConfigTool();
+var nodeTool = new NodeTool();
+var cryptoTool = new CryptoTool();
 var va = new VariesApp();
-var opt_type = va.getOptType();
+
+
 var channel = {};
 var client = null;
-var targets = [];
+var orderer = null;
 var tx_id = null;
-var options = va.getOptions(opt_type.ORG1_I);
-const getKeyFilesInDir = (dir) => {
-    //该函数用于找到keystore目录下的私钥文件的路径 
-    const files = fs.readdirSync(dir)
-    const keyFiles = []
-    files.forEach((file_name) => {
-        let filePath = path.join(dir, file_name)
-        if (file_name.endsWith('_sk')) {
-            keyFiles.push(filePath)
-        }
-    })
-    return keyFiles
-}
+var va_opt_type = va.getOptType();
+var orderer_opt = va.getOptions(va_opt_type.ORDERER);
+var user_options = va.getOptions(va_opt_type.ORG1);
+var tarChannel = "mychannel";
+var targets = [];
+
+
 Promise.resolve().then(() => {
     console.log("Load privateKey and signedCert");
     client = new hfc();
-    var createUserOpt = {
-        username: options.user_id,
-        mspid: options.msp_id,
-        cryptoContent: {
-            privateKey: getKeyFilesInDir(options.privateKeyFolder)[0],
-            signedCert: options.signedCert
-        }
-    }
-    //以上代码指定了当前用户的私钥，证书等基本信息 
-    return sdkUtils.newKeyValueStore({
-        path: "/tmp/fabric-client-stateStore/"
-    }).then((store) => {
-        client.setStateStore(store)
-        return client.createUser(createUserOpt)
-    })
+    return cryptoTool.getUserWithKeys(client, user_options);
 }).then((user) => {
-    channel = client.newChannel(options.channel_id);
-    let data = fs.readFileSync(options.peer_tls_cacerts);
-    let peer = client.newPeer(options.peer_url,
-        {
-            pem: Buffer.from(data).toString(),
-            'ssl-target-name-override': options.server_hostname
-        }
-    );
-    //因为启用了TLS，所以上面的代码就是指定Peer的TLS的CA证书 
+    channel = client.newChannel(tarChannel);
+    var peer = nodeTool.getPeer(client,user_options);
     channel.addPeer(peer);
-    //接下来连接Orderer的时候也启用了TLS，也是同样的处理方法 
-    let odata = fs.readFileSync(options.orderer_tls_cacerts);
-    let caroots = Buffer.from(odata).toString();
-    var orderer = client.newOrderer(options.orderer_url, {
-        'pem': caroots,
-        'ssl-target-name-override': "orderer.example.com"
-    });
-
+    orderer = nodeTool.getOrderer(client, orderer_opt);
     channel.addOrderer(orderer);
     targets.push(peer);
     //join org1 or org2 peer
-    var org1_peer = va.getOptions(opt_type.ORG1_I);
-    let data_org1 = fs.readFileSync(org1_peer.peer_tls_cacerts);
-    let peer_org1 = client.newPeer(org1_peer.peer_url,
-        {
-            pem: Buffer.from(data_org1).toString(),
-            'ssl-target-name-override': org1_peer.server_hostname
-        }
-    );
-    channel.addPeer(peer_org1);
-    targets.push(peer_org1);
-    var org2_peer = va.getOptions(opt_type.ORG2_I);
-    let data_org2 = fs.readFileSync(org2_peer.peer_tls_cacerts);
-    let peer_org2 = client.newPeer(org2_peer.peer_url,
-        {
-            pem: Buffer.from(data_org2).toString(),
-            'ssl-target-name-override': org2_peer.server_hostname
-        }
-    );
+    var peer_org2 = nodeTool.getPeer(client, va.getOptions(va_opt_type.ORG2))
     channel.addPeer(peer_org2);
     targets.push(peer_org2);
     return channel.initialize();
@@ -95,10 +54,10 @@ Promise.resolve().then(() => {
     //发起转账行为，将a->b 10元 
     var request = {
         targets: targets,
-        chaincodeId: options.chaincode_id,
+        chaincodeId: user_options.chaincode_id,
         fcn: 'invoke',
         args: ['b', 'a', '10'],
-        chainId: options.channel_id,
+        chainId: tarChannel,
         txId: tx_id
     };
     return channel.sendTransactionProposal(request);
@@ -159,12 +118,12 @@ Promise.resolve().then(() => {
         var eventPromises = [];
         let eh = client.newEventHub();
         //接下来设置EventHub，用于监听Transaction是否成功写入，这里也是启用了TLS 
-        let data = fs.readFileSync(options.peer_tls_cacerts);
+        let data = fs.readFileSync(user_options.peer_tls_cacerts);
         let grpcOpts = {
             pem: Buffer.from(data).toString(),
-            'ssl-target-name-override': options.server_hostname
+            'ssl-target-name-override': user_options.server_hostname
         }
-        eh.setPeerAddr(options.event_url, grpcOpts);
+        eh.setPeerAddr(user_options.event_url, grpcOpts);
         eh.connect();
 
         let txPromise = new Promise((resolve, reject) => {
