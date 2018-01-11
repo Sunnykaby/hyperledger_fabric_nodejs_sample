@@ -19,3 +19,22 @@ Promise.resolve().then(() =>{
 });
 
 console.log("End")
+
+var objs = {url1:{url:"1",ops:"1"},url2:{url:"2",ops:"2"}};
+
+console.log(objs["name"]);
+
+var list = [{url:"1",ops:"1"},{url:"2",ops:"2"}]
+var count = 0;
+list.forEach((obj)=>{
+    console.log(obj);
+    count += 1;
+})
+
+console.log(count)
+
+for(var temp in objs){
+    list.push(objs[temp])
+}
+
+console.log(list)
