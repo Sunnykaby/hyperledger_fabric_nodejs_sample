@@ -31,7 +31,7 @@ var targets = [];
 var chaincode_param = {
     path: "chaincode/exp/marbles02",
     name: "marbles",
-    verison: "1.0",
+    verison: "2.0",
     package: ""
 }
 

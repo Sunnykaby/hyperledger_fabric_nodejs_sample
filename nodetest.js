@@ -38,3 +38,9 @@ for(var temp in objs){
 }
 
 console.log(list)
+
+var das = new Date();
+console.log(das)
+console.log(das.toUTCString())
+console.log(das.toLocaleTimeString())
+// console.log(das.format('yyyy-MM-ddTHH:mm:ss'))
