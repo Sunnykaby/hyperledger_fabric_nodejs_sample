@@ -29,8 +29,8 @@ var tarChannel = "mychannel";
 var targets = [];
 
 var chaincode_param = {
-    path: "chaincode/marbles.go",
-    name: "marble",
+    path: "chaincode/exp/marbles02",
+    name: "marbles",
     verison: "1.0",
     package: ""
 }
@@ -59,8 +59,6 @@ Promise.resolve().then(() => {
     };
 
     return client.installChaincode(request);
-}, (err) => {
-    throw new Error(params.testDesc + ' - Failed to enroll user \'admin\'. ' + err);
 }).then((results) => {
     var proposalResponses = results[0];
 
@@ -71,9 +69,9 @@ Promise.resolve().then(() => {
         let one_good = false;
         if (proposalResponses && proposalResponses[i].response && proposalResponses[i].response.status === 200) {
             one_good = true;
-            logger.info(params.testDesc + ' - install proposal was good');
+            logger.info(chaincode_param.name + ' - install proposal was good');
         } else {
-            logger.error(params.testDesc + ' - install proposal was bad');
+            logger.error(chaincode_param.name + ' - install proposal was bad');
             error = proposalResponses[i];
         }
         all_good = all_good & one_good;
@@ -82,13 +80,14 @@ Promise.resolve().then(() => {
         console.log('success');
     } else {
         if (error) {
-            if (typeof error === 'Error') return new Error(error.stack ? error.stack : error);
-            return error;
+            if (typeof error === 'Error') console.log(error.stack ? error.stack : error);
+            else console.log(error)
         }
         else console.log("fail");
     }
 }, (err) => {
-    return new Error(err.stack ? err.stack : err);
+    console.log(err.stack ? err.stack : err);
+    
 }).catch((err) => {
-    return Promise.reject(new Error(err.stack ? err.stack : err));
+    console.log(err.stack ? err.stack : err)
 });

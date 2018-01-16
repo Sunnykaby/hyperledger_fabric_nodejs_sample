@@ -13,6 +13,7 @@ function locate(call, callback) {
             return
         }
     }
+    callback("Error, No position",null)
 }
 
 // A server-side streaming RPC
@@ -21,6 +22,7 @@ function list(call) {
     for (var index = 0; index < size; index++) {
         call.write(place_list[index].location)
     }
+    call.end();
 }
 
 // A bidirectional streaming RPC
