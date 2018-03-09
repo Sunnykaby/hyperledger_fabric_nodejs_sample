@@ -1,0 +1,31 @@
+{
+    "host": "localhost",
+    "port": "4000",
+    "channelName": "mychannel",
+    "eventWaitTime": "30000",
+    "CC_SRC_PATH": "../artifacts",
+    "chaincode_path" : "../artifacts/src/github.com/end2end/go/chaincode_example02.go",
+    "obcs": {
+        "orderer": {
+            "url": "grpcs://orderer0.org1.example.com:7050",
+            "server-hostname": "orderer0.org1.example.com",
+            "admin_name": "Admin@example.com",
+            "admin_key":"artifacts/crypto/orderer/keystore",
+            "signedCert":"artifacts/crypto/orderer/signcerts/Admin@example.com-cert.pem",
+            "tls_cacerts": "../artifacts/crypto/orderer/thirdtls/org1.example.com-ca.pem"
+        },
+        "Org1MSP": {
+            "name": "Org1MSP",
+            "mspid": "Org1MSP",
+            "admin_name":"Admin@org1.example.com",
+            "admin_key":"artifacts/crypto/org1/keystore",
+            "signedCert":"artifacts/crypto/org1/signcerts/Admin@org1.example.com-cert.pem",
+            "peer1": {
+                "requests": "grpcs://peer0.org1.example.com:7051",
+                "events": "grpcs://peer0.org1.example.com:7053",
+                "server-hostname": "peer0.org1.example.com",
+                "tls_cacerts": "../artifacts/crypto/org1/thirdtls/org1.example.com-ca.pem"
+            }
+        }
+    }
+}
