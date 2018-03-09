@@ -1,6 +1,10 @@
 #ignore the module
 node_modules/
 
+#ignore the subproject node module
+balance-transfer/node_modules/
+native-fabric-node-api/node_modules/
+
 #ignore vscode
 .vscode/
 
