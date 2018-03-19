@@ -1,6 +1,7 @@
 var program = require('commander');
 var log4js = require('log4js');
 var logger = log4js.getLogger('End2End');
+logger.setLevel('DEBUG');
 require('./config.js');//load the config info
 
 var install = require('./app/install-chaincode.js');
@@ -8,22 +9,23 @@ var instantiate = require('./app/instantiate-chaincode.js');
 var invoke = require('./app/invoke-transaction.js');
 var query = require('./app/query.js');
 
-function array(val){
+//convert string to a array for chaincode function call
+function array(val) {
     return val.split(',');
 }
 
 
-//定义参数,以及参数内容的描述  
+//For node command argument 
 program
     .version('0.0.1')
     .usage('[param] [value ...]')
     .option('-c, --chaincodeId <string>', 'the name of chaincode')
     .option('-p, --chaincodePath <string>', 'the path of chaincode')
     .option('-v, --chaincodeVersion <string>', 'the version of chaincode')
-    .option('-P, --peers <string>', 'the target')
+    .option('-P, --peers <string>', 'the target', array)
     .option('-C, --channelName <string>', 'the name of channel')
     .option('-o, --org <string>', "org name")
-    .option('-a, --cfargs <string>', "chaincode function args",array)
+    .option('-a, --cfargs <string>', "chaincode function args", array)
     .option('-f, --cfcn <string>', "org name")
     .option('-t, --target <string>', "The target call method name")
 
@@ -45,7 +47,7 @@ function getErrorMessage(field) {
     return response;
 }
 
-//解析commandline arguments  
+//abstract commandline arguments  
 program.parse(process.argv)
 
 //Get the call method 
@@ -65,18 +67,19 @@ var call_method = null;
 switch (method_choose) {
     case "install":
         //Read the param
-        logger.debug('==================== INSTALL CHAINCODE ==================');
+        logger.info('==================== INSTALL CHAINCODE ==================');
         peers = program.peers;
         chaincodeName = program.chaincodeId;
         chaincodePath = program.chaincodePath;
         chaincodeVersion = program.chaincodeVersion;
         channelName = program.channelName;
         orgName = program.org;
-        logger.debug('peers : ' + peers); // target peers list
-        logger.debug('chaincodeName : ' + chaincodeName);
-        logger.debug('chaincodePath  : ' + chaincodePath);
-        logger.debug('chaincodeVersion  : ' + chaincodeVersion);
-        logger.debug('channelName  : ' + channelName);
+        logger.info('peers : ' + peers); // target peers list
+        logger.info('chaincodeName : ' + chaincodeName);
+        logger.info('chaincodePath  : ' + chaincodePath);
+        logger.info('chaincodeVersion  : ' + chaincodeVersion);
+        logger.info('channelName  : ' + channelName);
+        logger.info('orgName  : ' + orgName);
         if (!peers || peers.length == 0) {
             console.error(getErrorMessage('\'peers\''));
             return;
@@ -95,6 +98,10 @@ switch (method_choose) {
         }
         if (!channelName) {
             console.error(getErrorMessage('\'channelName\''));
+            return;
+        }
+        if (!orgName) {
+            console.error(getErrorMessage('\'orgName\''));
             return;
         }
         return install.installChaincode(peers, chaincodeName, chaincodePath, chaincodeVersion, channelName, orgName).then(result => {
@@ -120,6 +127,11 @@ switch (method_choose) {
         logger.debug('chaincodePath  : ' + chaincodePath);
         logger.debug('fcn  : ' + cfcn);
         logger.debug('args  : ' + cargs);
+        logger.info('orgName  : ' + orgName);
+        if (!peers || peers.length == 0) {
+            console.error(getErrorMessage('\'peers\''));
+            return;
+        }
         if (!chaincodeName) {
             console.error(getErrorMessage('\'chaincodeName\''));
             return;
@@ -140,6 +152,14 @@ switch (method_choose) {
             console.error(getErrorMessage('\'args\''));
             return;
         }
+        if (!cfcn) {
+            console.error(getErrorMessage('\'fcn\''));
+            return;
+        }
+        if (!orgName) {
+            console.error(getErrorMessage('\'orgName\''));
+            return;
+        }
 
         instantiate.instantiateChaincode(peers, channelName, chaincodeName,
             chaincodeVersion, cfcn, chaincodePath, cargs, orgName)
@@ -148,6 +168,7 @@ switch (method_choose) {
                 process.exit()
             }, err => {
                 console.error(err)
+                process.exit()
             }).catch(err => { console.error(err) });
         break;
     case "invoke":
@@ -157,12 +178,17 @@ switch (method_choose) {
         channelName = program.channelName;
         cfcn = program.cfcn;
         cargs = program.cfargs;
-        logger.error(cargs)
         orgName = program.org;
+        logger.debug('peers  : ' + peers);
         logger.debug('channelName  : ' + channelName);
         logger.debug('chaincodeName : ' + chaincodeName);
         logger.debug('fcn  : ' + cfcn);
         logger.debug('args  : ' + cargs);
+        logger.info('orgName  : ' + orgName);
+        if (!peers || peers.length == 0) {
+            console.error(getErrorMessage('\'peers\''));
+            return;
+        }
         if (!chaincodeName) {
             console.error(getErrorMessage('\'chaincodeName\''));
             return;
@@ -177,6 +203,10 @@ switch (method_choose) {
         }
         if (!cargs) {
             console.error(getErrorMessage('\'args\''));
+            return;
+        }
+        if (!orgName) {
+            console.error(getErrorMessage('\'orgName\''));
             return;
         }
 
@@ -186,6 +216,7 @@ switch (method_choose) {
                 process.exit()
             }, err => {
                 console.error(err)
+                process.exit()
             }).catch(err => { console.error(err) });
         break;
     case "query":
@@ -194,13 +225,18 @@ switch (method_choose) {
         chaincodeName = program.chaincodeId;
         cargs = program.cfargs;
         cfcn = program.cfcn;
-        peer = program.peers;
+        peers = program.peers;
         orgName = program.org;
+        logger.debug('peers  : ' + peers);
         logger.debug('channelName : ' + channelName);
         logger.debug('chaincodeName : ' + chaincodeName);
         logger.debug('fcn : ' + cfcn);
         logger.debug('args : ' + cargs);
-
+        logger.info('orgName  : ' + orgName);
+        if (!peers || peers.length == 0) {
+            console.error(getErrorMessage('\'peers\''));
+            return;
+        }
         if (!chaincodeName) {
             console.error(getErrorMessage('\'chaincodeName\''));
             return;
@@ -217,8 +253,12 @@ switch (method_choose) {
             console.error(getErrorMessage('\'args\''));
             return;
         }
+        if (!orgName) {
+            console.error(getErrorMessage('\'orgName\''));
+            return;
+        }
 
-       query.queryChaincode(peer, channelName, chaincodeName, cargs, cfcn, orgName)
+        query.queryChaincode(peers, channelName, chaincodeName, cargs, cfcn, orgName)
             .then((message) => {
                 console.log(message);
             }, err => {
@@ -230,7 +270,7 @@ switch (method_choose) {
 
 }
 
-return true; 
+return true;
 
 
 

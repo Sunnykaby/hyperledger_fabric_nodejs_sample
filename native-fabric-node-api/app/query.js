@@ -1,3 +1,4 @@
+'use strict';
 var path = require('path');
 var fs = require('fs');
 var util = require('util');
@@ -5,20 +6,19 @@ var hfc = require('fabric-client');
 var helper = require('./helper.js');
 var logger = helper.getLogger('Query');
 
-var queryChaincode = function (peer, channelName, chaincodeName, args, fcn, org_name) {
+var queryChaincode = function (peers, channelName, chaincodeName, args, fcn, org_name) {
 	logger.debug('\n\n============ Query chaincode on organizations ============\n');
 	helper.setupChaincodeDeploy();
 
 	var client = null;
 	var channel = null;
-	var ORGS = helper.getORGS();
 	var tx_id = null;
 
 	return helper.getClientForOrg(org_name).then(_client => {
 		client = _client;
 		channel = client.newChannel(channelName);
 		var targets = [];
-		helper.setTargetPeers(client, channel, targets, org_name);
+		helper.setTargetPeers(client, channel, targets, org_name,peers);
 		tx_id = client.newTransactionID();
 		// send query
 		var request = {

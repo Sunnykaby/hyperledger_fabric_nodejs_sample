@@ -6,8 +6,6 @@ var hfc = require('fabric-client');
 var helper = require('./helper.js');
 var logger = helper.getLogger('instantiate-chaincode');
 
-
-
 var instantiateChaincode = function (peers, channelName, chaincodeName, chaincodeVersion, functionName,
 	chaincodePath, args, org_name) {
 	logger.debug('\n\n============ Instantiate chaincode on channel ' + channelName +
@@ -21,29 +19,19 @@ var instantiateChaincode = function (peers, channelName, chaincodeName, chaincod
 	var targets = [],
 		eventhubs = [];
 	var type = 'instantiate';
-	var ORGS = helper.getORGS();
 	var tx_id = null;
 
 	return helper.getClientForOrg(org_name).then(_client => {
 		client = _client;
 		channel = client.newChannel(channelName);
 		var targets = [];
-		helper.setTargetPeers(client, channel, targets, org_name);
-		helper.setTargetOrderer(client, channel);
+		helper.setTargetPeers(client, channel, targets, org_name, peers);
+		helper.setTargetOrderer(client, channel, 0);
 		// an event listener can only register with a peer in its own org
-		logger.debug(' create new eventhub %s', ORGS[org_name]['peer1'].events);
-		let data = fs.readFileSync(path.join(__dirname, ORGS[org_name]['peer1']['tls_cacerts']));
 		let eh = client.newEventHub();
-		eh.setPeerAddr(
-			ORGS[org_name]['peer1'].events,
-			{
-				pem: Buffer.from(data).toString()
-				// 'ssl-target-name-override': ORGS[org_name]['peer1']['server-hostname']
-			}
-		);
+		helper.setTargetEh(eh,org_name, peers[0])//only set one peer bind eventhub
 		eh.connect();
 		eventhubs.push(eh);
-
 		// read the config block from the peer for the channel
 		// and initialize the verify MSPs based on the participating
 		// organizations
@@ -82,7 +70,7 @@ var instantiateChaincode = function (peers, channelName, chaincodeName, chaincod
 		// x86 CI times out. set the per-request timeout to a super-long value
 		return channel.sendInstantiateProposal(request, 120000);
 	}, (err) => {
-		throw new Error('Failed to initialize the channel');
+		throw new Error('Failed to initialize the channel ' + err);
 	}).then((results) => {
 
 		var proposalResponses = results[0];
@@ -151,7 +139,6 @@ var instantiateChaincode = function (peers, channelName, chaincodeName, chaincod
 	}, (err) => {
 		throw new Error('Failed to send ' + type + ' proposal due to error: ' + err.stack ? err.stack : err);
 	}).then((response) => {
-		//TODO should look into the event responses
 		if (!(response instanceof Error) && response.status === 'SUCCESS') {
 			logger.debug("Successfully Instantiate the chaincode")
 			return {success:true, message:"Successfully Instantiate the chaincode"};

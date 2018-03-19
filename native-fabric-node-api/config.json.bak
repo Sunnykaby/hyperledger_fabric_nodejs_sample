@@ -4,8 +4,8 @@
             {
                 "id": "orderer0.org1.example.com",
                 "url": "grpcs://orderer0.org1.example.com:7050",
-                "keystore": "artifacts/crypto/orderer/keystore/ef8e88d28a86f23466ad378003d819561adbedc77fe90cc250424ce4de179a3c_sk",
-                "signcert": "artifacts/crypto/orderer/signcert/Admin@example.com-cert.pem",
+                "keystore": "artifacts/crypto/orderer/keystore/Org1MSP-key.pem",
+                "signcert": "artifacts/crypto/orderer/signcert/Org1MSP-sign-cert.pem",
                 "admincert": "artifacts/crypto/orderer/admincert/Org1MSP-admin-cert.pem",
                 "cacert": "artifacts/crypto/orderer/cacert/Org1MSP-ca-cert.pem",
                 "tlscacert": "artifacts/crypto/orderer/thirdtls/Org1MSP-tls-ca.pem"
@@ -33,7 +33,7 @@
             "name": "Org1MSP",
             "mspid": "Org1MSP",
             "keystore": "artifacts/crypto/peer/keystore/Org1MSP-key.pem",
-            "signcert": "artifacts/crypto/peer/signcert/Org1MSP-sign-cert.pem",
+            "signcert": "artifacts/crypto/peer/signcert/Admin@org1.example.com.pem",
             "admincert": "artifacts/crypto/peer/admincert/Org1MSP-admin-cert.pem",
             "cacert": "artifacts/crypto/peer/cacert/Org1MSP-ca-cert.pem",
             "peers": [

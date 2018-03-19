@@ -2,25 +2,19 @@
   "name": "End-to-End-Sample-App",
   "version": "1.0.0",
   "description": "A end2end example node program to demonstrate using node.js SDK APIs",
-  "main": "app.js",
+  "main": "End2End.js",
   "scripts": {
-    "start": "node app.js"
+    "start": "node End2End.js"
   },
   "keywords": [
     "fabric-client sample app",
     "end2end node sample",
     "v1.0 fabric nodesdk sample"
   ],
-  "engines": {
-    "node": ">=8.9.4 <9.0",
-    "npm": ">=5.6.0 <6.0"
-  },
-  "license": "Apache-2.0",
   "dependencies": {
     "commander": "^2.15.0",
     "fabric-ca-client": "unstable",
     "fabric-client": "unstable",
-    "fs-extra": "^2.0.0",
     "log4js": "^0.6.38"
   }
 }

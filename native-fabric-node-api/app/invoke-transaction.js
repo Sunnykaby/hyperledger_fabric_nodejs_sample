@@ -16,7 +16,6 @@ var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, or
 
 	var targets = [],
 		eventhubs = [];
-	var ORGS = helper.getORGS();
 	var tx_id = null;
 	var pass_results = null;
 
@@ -24,21 +23,11 @@ var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, or
 		client = _client;
 		channel = client.newChannel(channelName);
 		var targets = [];
-		helper.setTargetPeers(client, channel, targets, org_name);
-		helper.setTargetOrderer(client, channel);
+		helper.setTargetPeers(client, channel, targets, org_name, peers);
+		helper.setTargetOrderer(client, channel, 0);
 		// an event listener can only register with a peer in its own org
-		logger.debug(' create new eventhub %s', ORGS[org_name]['peer1'].events);
-		let data = fs.readFileSync(path.join(__dirname, ORGS[org_name]['peer1']['tls_cacerts']));
 		let eh = client.newEventHub();
-		eh.setPeerAddr(
-			ORGS[org_name]['peer1'].events,
-			{
-				pem: Buffer.from(data).toString()
-				// 'ssl-target-name-override': ORGS[org_name]['peer1']['server-hostname']，
-				// 'grpc.keepalive_timeout_ms': 3000, // time to respond to the ping, 3 seconds
-				// 'grpc.keepalive_time_ms': 360000, // time to wait for ping response, 6 minutes
-			}
-		);
+		helper.setTargetEh(eh,org_name, peers[0])//only set one peer bind eventhub
 		eh.connect();
 		eventhubs.push(eh);
 		return channel.initialize();
@@ -50,7 +39,7 @@ var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, or
 		tx_id = client.newTransactionID();
 
 		// send proposal to endorser
-		
+
 		var request = {
 			chaincodeId: chaincodeName,
 			fcn: fcn,
@@ -59,7 +48,7 @@ var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, or
 		};
 		return channel.sendTransactionProposal(request);
 	}, (err) => {
-		throw new Error('Failed to initialize the channel');
+		throw new Error('Failed to initialize the channel ' + err);
 	}).then((results) => {
 		pass_results = results;
 		var proposalResponses = pass_results[0];

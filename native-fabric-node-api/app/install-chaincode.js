@@ -5,8 +5,8 @@ var util = require('util');
 var config = require('../config.json');
 var helper = require('./helper.js');
 var logger = helper.getLogger('install-chaincode');
-var tx_id = null;
 
+var tx_id = null;
 var ORGS = helper.getORGS();
 
 var installChaincode = function (peers, chaincodeName, chaincodePath,
@@ -21,7 +21,7 @@ var installChaincode = function (peers, chaincodeName, chaincodePath,
 		client = _client;
 		channel = client.newChannel(channel_name);
 		var targets = [];
-		helper.setTargetPeers(client, channel, targets, org_name);
+		helper.setTargetPeers(client, channel, targets, org_name,peers);
 		// send proposal to endorser
 		var request = {
 			targets: targets,
