@@ -6,6 +6,17 @@ var hfc = require('fabric-client');
 var helper = require('./helper.js');
 var logger = helper.getLogger('instantiate-chaincode');
 
+/**
+ * Instantiate the chaincode to the target channel
+ * @param {*} peers 
+ * @param {*} channelName 
+ * @param {*} chaincodeName 
+ * @param {*} chaincodeVersion 
+ * @param {*The called function name when the chaincode instantiate} functionName 
+ * @param {*} chaincodePath 
+ * @param {*The args that called function require} args 
+ * @param {*} org_name 
+ */
 var instantiateChaincode = function (peers, channelName, chaincodeName, chaincodeVersion, functionName,
 	chaincodePath, args, org_name) {
 	logger.debug('\n\n============ Instantiate chaincode on channel ' + channelName +
@@ -20,6 +31,10 @@ var instantiateChaincode = function (peers, channelName, chaincodeName, chaincod
 		eventhubs = [];
 	var type = 'instantiate';
 	var tx_id = null;
+
+	org_name =  helper.checkOrg(org_name);
+	peers =  helper.checkPeers(peers,org_name);
+	var ORGS = helper.getORGS();
 
 	return helper.getClientForOrg(org_name).then(_client => {
 		client = _client;
@@ -45,7 +60,7 @@ var instantiateChaincode = function (peers, channelName, chaincodeName, chaincod
 
 		// send proposal to endorser
 		var request = {
-			// chaincodePath: chaincodePath,
+			chaincodePath: chaincodePath,
 			chaincodeId: chaincodeName,
 			chaincodeVersion: chaincodeVersion,
 			fcn: functionName,
@@ -54,17 +69,18 @@ var instantiateChaincode = function (peers, channelName, chaincodeName, chaincod
 			chaincodeType: "golang",
 			// use this to demonstrate the following policy:
 			// 'signed by org1 admin, then that's the only signature required
-			// 'endorsement-policy': {
-			// 	identities: [
-
-			// 		{ role: { name: 'admin', mspId: ORGS[org_name].mspid } }
-			// 	],
-			// 	policy: {
-			// 		'1-of': [
-			// 			{ 'signed-by': 0 }
-			// 		]
-			// 	}
-			// }
+			'endorsement-policy': {
+				identities: [
+					{ role: { name: 'member', mspId: ORGS[org_name].mspID } },
+					{ role: { name: 'admin', mspId: ORGS[org_name].mspID } }
+				],
+				policy: {
+					'1-of': [
+						{ 'signed-by': 0 },
+						{ 'signed-by': 1 }
+					]
+				}
+			}
 		};
 		// this is the longest response delay in the test, sometimes
 		// x86 CI times out. set the per-request timeout to a super-long value
@@ -77,6 +93,7 @@ var instantiateChaincode = function (peers, channelName, chaincodeName, chaincod
 
 		var proposal = results[1];
 		var all_good = true;
+		var isExist = 0;
 		for (var i in proposalResponses) {
 			let one_good = false;
 			if (proposalResponses && proposalResponses[i].response && proposalResponses[i].response.status === 200) {
@@ -84,10 +101,17 @@ var instantiateChaincode = function (peers, channelName, chaincodeName, chaincod
 				one_good = true;
 				logger.info(type + ' proposal was good');
 			} else {
-				logger.error(type + ' proposal was bad');
+				if(proposalResponses[i].details.indexOf("exists") != -1){
+					logger.info("Chaincode is exists. Continue...");
+					isExist++;
+				}
+				else {
+					logger.error(type + ' proposal was bad');
+				}
 			}
 			all_good = all_good & one_good;
 		}
+		if(isExist == proposalResponses.length) return true;
 		if (all_good) {
 			logger.debug(util.format('Successfully sent Proposal and received ProposalResponse: Status - %s, message - "%s", metadata - "%s", endorsement signature: %s', proposalResponses[0].response.status, proposalResponses[0].response.message, proposalResponses[0].response.payload, proposalResponses[0].endorsement.signature));
 			var request = {
@@ -118,7 +142,7 @@ var instantiateChaincode = function (peers, channelName, chaincodeName, chaincod
 						eh.unregisterTxEvent(deployId);
 					});
 				});
-				logger.debug('register eventhub %s with tx=%s', eh.getPeerAddr(), deployId);
+				logger.info('register eventhub %s with tx=%s', eh.getPeerAddr(), deployId);
 				eventPromises.push(txPromise);
 			});
 
@@ -126,7 +150,7 @@ var instantiateChaincode = function (peers, channelName, chaincodeName, chaincod
 			return Promise.all([sendPromise].concat(eventPromises))
 				.then((results) => {
 
-					logger.debug('Event promise all complete and testing complete');
+					logger.info('Event promise all complete and testing complete');
 					return results[0]; // just first results are from orderer, the rest are from the peer events
 
 				}).catch((err) => {
@@ -139,8 +163,8 @@ var instantiateChaincode = function (peers, channelName, chaincodeName, chaincod
 	}, (err) => {
 		throw new Error('Failed to send ' + type + ' proposal due to error: ' + err.stack ? err.stack : err);
 	}).then((response) => {
-		if (!(response instanceof Error) && response.status === 'SUCCESS') {
-			logger.debug("Successfully Instantiate the chaincode")
+		if (response == true || (!(response instanceof Error) && response.status === 'SUCCESS')) {
+			logger.info("Successfully Instantiate the chaincode")
 			return {success:true, message:"Successfully Instantiate the chaincode"};
 		} else {
 			return new Error('Failed to order the ' + type + 'transaction. Error code: ' + response.status);

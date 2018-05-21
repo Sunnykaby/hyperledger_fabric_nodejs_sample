@@ -6,13 +6,25 @@ var hfc = require('fabric-client');
 var helper = require('./helper.js');
 var logger = helper.getLogger('Query');
 
+/**
+ * Query the chaincode with target function and args
+ * @param {*} peers 
+ * @param {*} channelName 
+ * @param {*} chaincodeName 
+ * @param {*Query function args} args 
+ * @param {*Query function name} fcn 
+ * @param {*} org_name 
+ */
 var queryChaincode = function (peers, channelName, chaincodeName, args, fcn, org_name) {
-	logger.debug('\n\n============ Query chaincode on organizations ============\n');
+	logger.info('\n\n============ Query chaincode on organizations ============\n');
 	helper.setupChaincodeDeploy();
 
 	var client = null;
 	var channel = null;
 	var tx_id = null;
+
+	org_name =  helper.checkOrg(org_name);
+	peers =  helper.checkPeers(peers,org_name);
 
 	return helper.getClientForOrg(org_name).then(_client => {
 		client = _client;

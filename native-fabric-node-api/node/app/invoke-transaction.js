@@ -6,8 +6,17 @@ var hfc = require('fabric-client');
 var helper = require('./helper.js');
 var logger = helper.getLogger('invoke-chaincode');
 
+/**
+ * Invoke the chaincode with target function and args
+ * @param {*} peers 
+ * @param {*} channelName 
+ * @param {*} chaincodeName 
+ * @param {*The invoke function name} fcn 
+ * @param {*The invoke function args} args 
+ * @param {*} org_name 
+ */
 var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, org_name) {
-	logger.debug(util.format('\n============ invoke transaction on channel %s ============\n', channelName));
+	logger.info(util.format('\n============ invoke transaction on channel %s ============\n', channelName));
 
 	helper.setupChaincodeDeploy();
 
@@ -19,6 +28,9 @@ var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, or
 	var tx_id = null;
 	var pass_results = null;
 
+	org_name =  helper.checkOrg(org_name);
+	peers =  helper.checkPeers(peers,org_name);
+
 	return helper.getClientForOrg(org_name).then(_client => {
 		client = _client;
 		channel = client.newChannel(channelName);
@@ -27,7 +39,7 @@ var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, or
 		helper.setTargetOrderer(client, channel, 0);
 		// an event listener can only register with a peer in its own org
 		let eh = client.newEventHub();
-		helper.setTargetEh(eh,org_name, peers[0])//only set one peer bind eventhub
+		helper.setTargetEh(eh,org_name, peers[0]);//only set one peer bind eventhub
 		eh.connect();
 		eventhubs.push(eh);
 		return channel.initialize();
@@ -61,7 +73,7 @@ var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, or
 			if (proposal_response.response && proposal_response.response.status === 200) {
 				one_good = channel.verifyProposalResponse(proposal_response);
 				if (one_good) {
-					logger.debug('transaction proposal signature and endorser are valid');
+					logger.info('transaction proposal signature and endorser are valid');
 				}
 
 				// check payload,if the proposal has a payload. We can check it.
@@ -76,7 +88,7 @@ var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, or
 			// got the same results on the proposal
 			all_good = channel.compareProposalResponseResults(proposalResponses);
 			if (all_good) {
-				logger.debug(' All proposals have a matching read/writes sets');
+				logger.info(' All proposals have a matching read/writes sets');
 			}
 			else {
 				logger.error(' All proposals do not have matching read/write sets');
@@ -107,13 +119,13 @@ var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, or
 								logger.error('The balance transfer transaction was invalid, code = ' + code);
 								reject();
 							} else {
-								logger.debug('The balance transfer transaction has been committed on peer ' + eh.getPeerAddr());
+								logger.info('The balance transfer transaction has been committed on peer ' + eh.getPeerAddr());
 								resolve();
 							}
 						},
 						(err) => {
 							clearTimeout(handle);
-							logger.debug('Successfully received notification of the event call back being cancelled for ' + deployId);
+							logger.info('Successfully received notification of the event call back being cancelled for ' + deployId);
 							resolve();
 						}
 					);
@@ -123,7 +135,7 @@ var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, or
 			var sendPromise = channel.sendTransaction(request);
 			return Promise.all([sendPromise].concat(eventPromises))
 				.then((results) => {
-					logger.debug(' event promise all complete and testing complete');
+					logger.info(' event promise all complete and testing complete');
 					return results[0]; // the first returned value is from the 'sendPromise' which is from the 'sendTransaction()' call
 				}).catch((err) => {
 					logger.error('Failed to send transaction and get notifications within the timeout period.');
@@ -138,11 +150,11 @@ var invokeChaincode = function (peers, channelName, chaincodeName, fcn, args, or
 		throw new Error('Failed to send proposal due to error: ' + err.stack ? err.stack : err);
 	}).then((response) => {
 		if (response.status === 'SUCCESS') {
-			logger.debug('Successfully sent transaction to the orderer.');
-			logger.debug('invokeChaincode end');
+			logger.info('Successfully sent transaction to the orderer.');
+			logger.info('InvokeChaincode end');
 			// close the connections
 			channel.close();
-			logger.debug('Successfully closed all connections');
+			logger.info('Successfully closed all connections');
 			return { success: true, message: 'Successfully invoke transaction' };
 		} else {
 			logger.error('Failed to order the transaction. Error code: ' + response.status);
