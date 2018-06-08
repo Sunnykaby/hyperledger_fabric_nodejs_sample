@@ -14,6 +14,7 @@ var clients = {};
 var channels = {};
 var caClients = {};
 var cryptoTool = new CryptoTool();
+var client_user = null;
 
 var sleep = function (sleep_time_ms) {
 	return new Promise(resolve => setTimeout(resolve, sleep_time_ms));
@@ -187,12 +188,16 @@ function getClientForOrg(userorg) {
 	let client = new hfc();
 	return new Promise((resolve, reject) => {
 		return cryptoTool.getUserWithKeys(client, getOrg_User_opt(userorg)).then(user => {
+			client_user = user;
 			resolve(client);
 		}).catch(err => {
 			reject(err);
 		})
 	});
+}
 
+function getClientUser(){
+	return client_user;
 }
 
 /**
@@ -217,3 +222,4 @@ exports.setTargetOrderer = setTargetOrderer;
 exports.setTargetEh = setTargetEh;
 exports.checkOrg = checkOrg;
 exports.checkPeers = checkPeers;
+exports.getClientUser = getClientUser;
