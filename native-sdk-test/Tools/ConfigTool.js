@@ -5,7 +5,8 @@ var fs = require('fs');
 var Configtxlator = require('../FabricTools/Configtxlator.js');
 
 var configtx = new Configtxlator();
-
+var log4js = require('log4js');
+var logger = log4js.getLogger("ConfigTool.js");
 
 //const var
 const TYPE = {
@@ -93,6 +94,7 @@ var ConfigTool = class {
      */
     getPresignChannelCreateConfig(client) {
         var update_envelope_json = JSON.stringify(this.update_envelope);
+        logger.info(update_envelope_json)
         fs.writeFileSync(path.resolve("config/creationUpdate.json"), update_envelope_json);
         return configtx.encode(update_envelope_json, 'common.Envelope').then(update_envelope_proto => {
             this.update_config_proto = update_envelope_proto;
@@ -270,6 +272,37 @@ var ConfigTool = class {
             }
         }
         return policyGroups;
+    }
+
+    setAnchorPeerForOrg(anchors, org){
+        var configvalue = this.update_config.channel_group.groups.Application.groups[org].values;
+            if (configvalue.hasOwnProperty('AnchorPeers')) {
+                if (configvalue.AnchorPeers.hasOwnProperty('value')) {
+                    if (configvalue.AnchorPeers.value.hasOwnProperty('anchor_peers')) {
+                        configvalue.AnchorPeers.value.anchor_peers = anchors;
+                    }
+                    else {
+                        configvalue.AnchorPeers.value = {"anchor_peers" : anchors};
+                    }
+                }
+                else {
+                    var value_value =
+                    {
+                        "anchor_peers" : anchors
+                    };
+                    configvalue.AnchorPeers['value'] = value_value;
+                }
+            }
+            else {
+                var newanchors = {
+                    "mod_policy": "Admins",
+                    "value" : {
+                        "anchor_peers" : []
+                    }
+                };
+                newanchors.value.anchor_peers = anchors;
+                configvalue.AnchorPeers = newanchors;
+            }
     }
 };
 

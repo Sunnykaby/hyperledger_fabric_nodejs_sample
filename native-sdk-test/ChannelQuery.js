@@ -26,7 +26,7 @@ var tx_id = null;
 var va_opt_type = va.getOptType();
 var orderer_opt = va.getOptions(va_opt_type.ORDERER);
 var user_options = va.getOptions(va_opt_type.ORG1);
-var tarChannel = "mychannel";
+var tarChannel = "chg";
 var targets = [];
 
 
@@ -49,6 +49,9 @@ Promise.resolve().then(() => {
     // organizations
     return channel.initialize();
 }).then(() => {
+    return configTool.loadConfigByChannel(channel, configTool.getType().COMMON_CONFIG_APP);
+}).then((updated_config) => {
+    logger.error(updated_config)
     //user default primary peer to send query
     return channel.queryBlock(0);
 }).then((block) => {
