@@ -1,68 +1,126 @@
 {
-    "obcs": {
+    "fabric": {
         "orderers": [
             {
-                "id": "orderer0.org1.example.com",
-                "url": "grpcs://orderer0.org1.example.com:7050",
-                "keystore": "artifacts/crypto/orderer/keystore/ef8e88d28a86f23466ad378003d819561adbedc77fe90cc250424ce4de179a3c_sk",
-                "signcert": "artifacts/crypto/orderer/signcert/Admin@example.com-cert.pem",
-                "admincert": "artifacts/crypto/orderer/admincert/Org1MSP-admin-cert.pem",
-                "cacert": "artifacts/crypto/orderer/cacert/Org1MSP-ca-cert.pem",
-                "tlscacert": "artifacts/crypto/orderer/thirdtls/Org1MSP-tls-ca.pem"
-            },
-            {
-                "id": "orderer1.org1.example.com",
-                "url": "grpcs://orderer1.org1.example.com:7150",
-                "keystore": "artifacts/crypto/orderer/keystore/Org1MSP-key.pem",
-                "signcert": "artifacts/crypto/orderer/signcert/Org1MSP-sign-cert.pem",
-                "admincert": "artifacts/crypto/orderer/admincert/Org1MSP-admin-cert.pem",
-                "cacert": "artifacts/crypto/orderer/cacert/Org1MSP-ca-cert.pem",
-                "tlscacert": "artifacts/crypto/orderer/thirdtls/Org1MSP-tls-ca.pem"
-            },
-            {
-                "id": "orderer2.org1.example.com",
-                "url": "grpcs://orderer2.org1.example.com:7250",
-                "keystore": "artifacts/crypto/orderer/keystore/Org1MSP-key.pem",
-                "signcert": "artifacts/crypto/orderer/signcert/Org1MSP-sign-cert.pem",
-                "admincert": "artifacts/crypto/orderer/admincert/Org1MSP-admin-cert.pem",
-                "cacert": "artifacts/crypto/orderer/cacert/Org1MSP-ca-cert.pem",
-                "tlscacert": "artifacts/crypto/orderer/thirdtls/Org1MSP-tls-ca.pem"
+                "id": "net000011orderer0",
+                "mspID": "net00001",
+                "url": "grpc://net00001manager-peer.node.com:7301",
+                "keystoreFilepath": "artifacts/crypto/orderer/keystore/net00001-key.pem",
+                "signcertFilepath": "artifacts/crypto/orderer/signcert/net00001-signcert.pem",
+                "admincertFilepath": "artifacts/crypto/orderer/admincert/net00001-admincert.pem",
+                "cacertFilepath": "artifacts/crypto/orderer/cacert/net00001-cacert.pem",
+                "tlscacertFilepath": "artifacts/crypto/orderer/thirdtls/net00001-tlscacert.pem"
             }
         ],
-        "Org1MSP": {
-            "name": "Org1MSP",
-            "mspid": "Org1MSP",
-            "keystore": "artifacts/crypto/peer/keystore/Org1MSP-key.pem",
-            "signcert": "artifacts/crypto/peer/signcert/Org1MSP-sign-cert.pem",
-            "admincert": "artifacts/crypto/peer/admincert/Org1MSP-admin-cert.pem",
-            "cacert": "artifacts/crypto/peer/cacert/Org1MSP-ca-cert.pem",
+        "net00001": {
+            "name": "net00001",
+            "mspID": "net00001",
+            "keystoreFilepath": "artifacts/crypto/peer/keystore/net00001-key.pem",
+            "signcertFilepath": "artifacts/crypto/peer/signcert/net00001-signcert.pem",
+            "admincertFilepath": "artifacts/crypto/peer/admincert/net00001-admincert.pem",
+            "cacertFilepath": "artifacts/crypto/peer/cacert/net00001-cacert.pem",
             "peers": [
                 {
-                    "id": "peer0.org1.example.com",
-                    "url": "grpcs://peer0.org1.example.com:7051",
-                    "event_url": "grpcs://peer0.org1.example.com:7053",
-                    "tlscacert": "artifacts/crypto/peer/thirdtls/Org1MSP-tls-ca.pem"
+                    "id": "net000011peer0",
+                    "url": "grpc://net00001manager-peer.node.com:7100",
+                    "eventUrl": "grpc://net00001manager-peer.node.com:7101",
+                    "tlscacertFilepath": "artifacts/crypto/peer/thirdtls/net00001-tlscacert.pem"
                 },
                 {
-                    "id": "peer1.org1.example.com",
-                    "url": "grpcs://peer1.org1.example.com:9051",
-                    "event_url": "grpcs://peer1.org1.example.com:9053",
-                    "tlscacert": "artifacts/crypto/peer/thirdtls/Org1MSP-tls-ca.pem"
+                    "id": "net000011peer1",
+                    "url": "grpc://net00001manager-peer.node.com:7102",
+                    "eventUrl": "grpc://net00001manager-peer.node.com:7103",
+                    "tlscacertFilepath": "artifacts/crypto/peer/thirdtls/net00001-tlscacert.pem"
                 },
                 {
-                    "id": "peer2.org1.example.com",
-                    "url": "grpcs://peer2.org1.example.com:10051",
-                    "event_url": "grpcs://peer2.org1.example.com:10053",
-                    "tlscacert": "artifacts/crypto/peer/thirdtls/Org1MSP-tls-ca.pem"
+                    "id": "net000011peer2",
+                    "url": "grpc://net00001manager-peer.node.com:7104",
+                    "eventUrl": "grpc://net00001manager-peer.node.com:7105",
+                    "tlscacertFilepath": "artifacts/crypto/peer/thirdtls/net00001-tlscacert.pem"
                 },
                 {
-                    "id": "peer3.org1.example.com",
-                    "url": "grpcs://peer3.org1.example.com:11051",
-                    "event_url": "grpcs://peer3.org1.example.com:11053",
-                    "tlscacert": "artifacts/crypto/peer/thirdtls/Org1MSP-tls-ca.pem"
+                    "id": "net000011peer3",
+                    "url": "grpc://net00001manager-peer.node.com:7106",
+                    "eventUrl": "grpc://net00001manager-peer.node.com:7107",
+                    "tlscacertFilepath": "artifacts/crypto/peer/thirdtls/net00001-tlscacert.pem"
+                },
+                {
+                    "id": "net000011peer5",
+                    "url": "grpc://net00001manager-peer.node.com:7110",
+                    "eventUrl": "grpc://net00001manager-peer.node.com:7111",
+                    "tlscacertFilepath": "artifacts/crypto/peer/thirdtls/net00001-tlscacert.pem"
+                },
+                {
+                    "id": "net000011peer6",
+                    "url": "grpc://net00001manager-peer.node.com:7112",
+                    "eventUrl": "grpc://net00001manager-peer.node.com:7113",
+                    "tlscacertFilepath": "artifacts/crypto/peer/thirdtls/net00001-tlscacert.pem"
+                },
+                {
+                    "id": "net000012peer0",
+                    "url": "grpc://net00001manager-peer2.node.com:7100",
+                    "eventUrl": "grpc://net00001manager-peer2.node.com:7101",
+                    "tlscacertFilepath": "artifacts/crypto/peer/thirdtls/net00001-tlscacert.pem"
                 }
             ],
-            "REST Proxy": []
+            "RESTProxys": [
+                {
+                    "id": "net00001restproxy1",
+                    "url": "https://net00001manager-restproxy.com:443",
+                    "channels": [
+                        {
+                            "name": "ch075035",
+                            "chaincodes": [
+                                {
+                                    "name": "c075035"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "net00001restproxy2",
+                    "url": "https://net00001manager-restproxy.com:443",
+                    "channels": [
+                        {
+                            "name": "dhan05192240",
+                            "chaincodes": [
+                                {
+                                    "name": "dhan02"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "net00001restproxy3",
+                    "url": "https://net00001manager-restproxy.com:443",
+                    "channels": [
+                        {
+                            "name": "dhan05192240",
+                            "chaincodes": [
+                                {
+                                    "name": "dhan02"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "id": "net00001restproxy4",
+                    "url": "https://net00001manager-restproxy.com:443",
+                    "channels": [
+                        {
+                            "name": "dhan05192240",
+                            "chaincodes": [
+                                {
+                                    "name": "dhan02"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
         }
     }
 }
