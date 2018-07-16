@@ -4,8 +4,13 @@ node_modules/
 #ignore the subproject node module
 balance-transfer/node_modules/
 native-fabric-node-api/node_modules/
+native-connection-profile/node/node_modules/
+
 
 #ignore vscode
 .vscode/
 
+#ignore package-lock file
+
 package-lock.json
+native-connection-profile/node/package-lock.json
