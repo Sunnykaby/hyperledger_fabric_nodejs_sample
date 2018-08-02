@@ -14,3 +14,4 @@ native-connection-profile/node/node_modules/
 
 package-lock.json
 native-connection-profile/node/package-lock.json
+native-connection-profile/artifacts/crypto-config/

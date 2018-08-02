@@ -2,9 +2,8 @@
 var log4js = require('log4js');
 var logger = log4js.getLogger('Helper');
 var path = require('path');
-var hfc = require('fabric-client');
-var ORGS = hfc.getConfigSetting('fabric');
 var ConfigTool = require('./config-tool.js');
+var hfc = require('fabric-client');
 
 logger.setLevel('INFO');
 hfc.setLogger(logger);
@@ -15,36 +14,40 @@ var sleep = function (sleep_time_ms) {
 	return new Promise(resolve => setTimeout(resolve, sleep_time_ms));
 }
 
-
 /**
  * Check the org input and get org
- * @param {*} org_name 
+ * @param {*} default_org 
  */
-function checkOrg(org_name) {
+function checkOrg(client, default_org) {
 	//If default, get the org from the config file
-	if (org_name == "default") {
-		return getDefaultOrg();
+	if (default_org == "default") {
+		var client_org = client.getClientConfig().organization;
+		if (client_org == undefined || client_org == null) return default_org;
+		else return client_org;
+	} else {
+		return default_org;
 	}
-	else return org_name;
-
 }
 
-function getDefaultOrg() {
-	let local_org = "";
-	for (let key in ORGS) {
-		if (key != "orderers") local_org = key;
-	}
-	return local_org;
+function getOrderer(client, index){
+	return 'orderer.example.com';
 }
+
+function getPeers(client, index, org){
+	return ['peer0.org1.example.com'];
+}
+
+function initNetworkConfig() {
+	return Promise.resolve("Init network succussfully");
+}
+
 
 /**
  * Create a fabric client with the target user context config
- * @param {*} userorg 
  */
-function getClientForOrg(userorg) {
-	logger.info('getClientForOrg - ****** START %s %s', userorg);
+function getClient() {
 	return new Promise((resolve, reject) => {
-		return  configTool.initClientWithOrg(userorg).then(client => {
+		return  configTool.initClient().then(client => {
 			resolve(client);
 		}).catch(err => {
 			reject(err);
@@ -59,13 +62,16 @@ var setupChaincodeDeploy = function () {
 	process.env.GOPATH = path.join(__dirname, "../../../artifacts");
 };
 
-function getLogger(moduleName) {
+var getLogger = function (moduleName) {
 	var logger = log4js.getLogger(moduleName);
 	logger.setLevel('INFO');
 	return logger;
 };
 
-exports.getClientForOrg = getClientForOrg;
+exports.getClient = getClient;
 exports.getLogger = getLogger;
 exports.setupChaincodeDeploy = setupChaincodeDeploy;
 exports.checkOrg = checkOrg;
+exports.initNetworkConfig = initNetworkConfig;
+exports.getOrderer = getOrderer;
+exports.getPeers = getPeers;

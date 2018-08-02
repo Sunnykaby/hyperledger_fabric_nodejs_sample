@@ -1,37 +1,34 @@
 'use strict';
-var helper = require('./tools/helper');
+var helper = require('./tools/helper.js');
 var logger = helper.getLogger('Query');
 
 /**
  * Query the chaincode with target function and args
  * @param {*} channelName 
  * @param {*} chaincodeName 
- * @param {*Query function args} args 
  * @param {*Query function name} fcn 
- * @param {*} org_name 
+ * @param {*Query function args} args 
  */
-var queryChaincode = function (channelName, chaincodeName, args, fcn, org_name) {
+var queryChaincode = function (channelName, chaincodeName, fcn, args) {
 	logger.info('\n\n============ Query chaincode on organizations ============\n');
 	helper.setupChaincodeDeploy();
 
 	var client = null;
 	var channel = null;
 
-	org_name =  helper.checkOrg(org_name);
-
-	return helper.getClientForOrg(org_name).then(_client => {
+	return helper.getClient().then(_client => {
 		client = _client;
 		channel = client.getChannel(channelName);
 		// send query
 		var request = {
+			targets: helper.getPeers(client, 0),
 			chaincodeId: chaincodeName,
 			fcn: fcn,
 			args: args
 		};
 		return channel.queryByChaincode(request, true);
 	}, (err) => {
-		logger.error('Failed to get submitter \'admin\'. Error: ' + err.stack ? err.stack : err);
-		throw new Error('Failed to get submitter');
+		throw new Error('Failed to create client ' + err);
 	}).then((response_payloads) => {
 		if (response_payloads) {
 			for (let i = 0; i < response_payloads.length; i++) {

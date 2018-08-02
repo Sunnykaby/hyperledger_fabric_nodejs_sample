@@ -6,8 +6,10 @@ var base_config_path = "../"
 
 var ConfigTool = class {
 
-    constructor() {
 
+    constructor() {
+        this._client = null;
+        this._org = null;
     }
 
     cleanUpConfigCache(orgName) {
@@ -21,26 +23,37 @@ var ConfigTool = class {
         fsx.removeSync(crypto_path);
     }
 
-    initClientWithOrg() {
+    initClient(org) {
         // build a 'Client' instance that knows the connection profile
         //  this connection profile does not have the client information, we will
         //  load that later so that we can switch this client to be in a different
         //  organization.
+        if(this._client!=null && this._org == org){
+            return Promise.resolve(this._client);
+        }
         var client = Client.loadFromConfig(base_config_path + 'network.yaml');
-
         // Load the client information for an organization.
         // The file only has the client section.
         // A real application might do this when a new user logs in.
-        // client_org1.loadFromConfig(base_config_path + orgName + '.yaml');
+        if(this.checkParam(org)){
+            client.loadFromConfig(base_config_path + orgName + '.yaml');
+            this._org = org;
+        }
+        
         // tell this client instance where the state and key stores are located
         return client.initCredentialStores().then((nothing) => {
-            //     return client._setAdminFromConfig();
-            // }).then( admin =>{
-            // return client.setUserContext("admin");
-            // }).then(admin =>{
-            // logger.error(admin)
+            this._client = client;
             return Promise.resolve(client);
         });
+    }
+
+    setUserContext() {
+        
+    }
+
+    checkParam(arg) {
+        if(arg !=undefined && arg != null) return true;
+        else return false;
     }
 }
 

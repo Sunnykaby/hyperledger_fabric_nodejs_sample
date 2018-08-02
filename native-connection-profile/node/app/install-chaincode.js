@@ -8,23 +8,21 @@ var logger = helper.getLogger('install-chaincode');
  * @param {*Target chaincode name} chaincodeName 
  * @param {*Target chaincode path} chaincodePath 
  * @param {*Target chaincode version} chaincodeVersion 
- * @param {*Target org, including the target peers} org_name 
  */
 var installChaincode = function (chaincodeName, chaincodePath,
-	chaincodeVersion, org_name) {
+	chaincodeVersion) {
 	logger.info('\n\n============ Install chaincode on organizations ============\n');
-	//Init chaincide path env
 	helper.setupChaincodeDeploy();
 
 	var client = null;
-	org_name = helper.checkOrg(org_name);
-
-	return helper.getClientForOrg(org_name).then(_client => {
+	var tx_id = null;
+	return helper.getClient().then(_client => {
 		client = _client;
-		let tx_id = client.newTransactionID(true);
+		tx_id = client.newTransactionID(true);
 		// If the targets parameter is excluded from the request parameter list 
 		// then the peers defined in the current organization of the client will be used.
 		let request = {
+			targets: helper.getPeers(client,0),
 			chaincodePath: chaincodePath,
 			chaincodeId: chaincodeName,
 			chaincodeVersion: chaincodeVersion,
@@ -32,8 +30,6 @@ var installChaincode = function (chaincodeName, chaincodePath,
 			chaincodeType: "golang",
 			txId: tx_id
 		};
-		// If the targets parameter is excluded from the request parameter list 
-		// then the peers defined in the current organization of the client will be used.
 		return client.installChaincode(request);
 	}, (err) => {
 		throw new Error('Failed to create client. ' + err);
@@ -59,10 +55,10 @@ var installChaincode = function (chaincodeName, chaincodePath,
 			}
 			all_good = all_good & one_good;
 		}
-		if (isExist == proposalResponses.length) return {status:  "chaincode exists"};
+		if (isExist == proposalResponses.length) return { status: "chaincode exists" };
 		if (all_good) {
 			logger.info(util.format('Successfully sent install Proposal and received ProposalResponse: Status - %s', proposalResponses[0].response.status));
-			return {status:  "Install chaincode successfully"};
+			return { status: "Install chaincode successfully", tx_id: tx_id.getTransactionID(true) };
 		} else {
 			throw new Error(util.format('Failed to send install Proposal or receive valid response: %s', errors));
 		}

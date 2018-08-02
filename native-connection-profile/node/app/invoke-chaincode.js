@@ -5,14 +5,12 @@ var logger = helper.getLogger('invoke-chaincode');
 
 /**
  * Invoke the chaincode with target function and args
- * @param {*} peers 
  * @param {*} channelName 
  * @param {*} chaincodeName 
  * @param {*The invoke function name} fcn 
  * @param {*The invoke function args} args 
- * @param {*} org_name 
  */
-var invokeChaincode = function (channelName, chaincodeName, fcn, args, org_name) {
+var invokeChaincode = function (channelName, chaincodeName, fcn, args) {
 	logger.info(util.format('\n============ invoke transaction on channel %s ============\n', channelName));
 
 	helper.setupChaincodeDeploy();
@@ -24,9 +22,7 @@ var invokeChaincode = function (channelName, chaincodeName, fcn, args, org_name)
 	var tx_id = null;
 	var pass_results = null;
 
-	org_name = helper.checkOrg(org_name);
-
-	return helper.getClientForOrg(org_name).then(_client => {
+	return helper.getClient().then(_client => {
 		client = _client;
 		channel = client.getChannel(channelName);
 		// an event listener can only register with a peer in its own org
@@ -36,12 +32,15 @@ var invokeChaincode = function (channelName, chaincodeName, fcn, args, org_name)
 		// send proposal to endorser
 
 		var request = {
+			targets: helper.getPeers(client, 0),
 			chaincodeId: chaincodeName,
 			fcn: fcn,
 			args: args,
 			txId: tx_id,
 		};
 		return channel.sendTransactionProposal(request);
+	}, (err) => {
+		throw new Error('Failed to create client ' + err);
 	}).then((results) => {
 		pass_results = results;
 		var proposalResponses = pass_results[0];
@@ -57,6 +56,7 @@ var invokeChaincode = function (channelName, chaincodeName, fcn, args, org_name)
 				// 	logger.info('transaction proposal signature and endorser are valid');
 				// }
 				one_good = true;
+
 				// check payload,if the proposal has a payload. We can check it.
 				// let payload = proposal_response.response.payload.toString();
 			} else {
@@ -132,7 +132,7 @@ var invokeChaincode = function (channelName, chaincodeName, fcn, args, org_name)
 			throw sendTransaction_results;
 		} else if (sendTransaction_results.status === 'SUCCESS') {
 			logger.info('Successfully sent transaction to invoke the chaincode to the orderer.');
-			return {status: "Invoke the chaincode Successfully"}
+			return {status: "Invoke the chaincode Successfully", tx_id: tx_id.getTransactionID(true)}
 		} else {
 			logger.error('Failed to order the transaction to invoke the chaincode. Error code: ' + sendTransaction_results.status);
 			throw new Error('Failed to order the transaction to invoke the chaincode. Error code: ' + sendTransaction_results.status);
@@ -141,7 +141,7 @@ var invokeChaincode = function (channelName, chaincodeName, fcn, args, org_name)
 		logger.error('Failed to send transaction due to error: ' + err.stack ? err.stack : err);
 		throw new Error('Failed to send transaction due to error: ' + err.stack ? err.stack : err);
 	}).catch((err) => {
-		throw new Error('Failed to send ' + type + ' transaction and get notifications within the timeout period.' + err.stack ? err.stack : err);
+		throw new Error('Failed to send transaction and get notifications within the timeout period.' + err.stack ? err.stack : err);
 	});;
 };
 

@@ -1,6 +1,6 @@
 'use strict';
 var util = require('util');
-var helper = require('./tools/helper');
+var helper = require('./tools/helper.js');
 var logger = helper.getLogger('instantiate-chaincode');
 
 /**
@@ -8,24 +8,23 @@ var logger = helper.getLogger('instantiate-chaincode');
  * @param {*} channelName 
  * @param {*} chaincodeName 
  * @param {*} chaincodeVersion 
+ * @param {*The called function name when the chaincode instantiate} fcn 
  * @param {*The args that called function require} args 
- * @param {*} org_name 
  */
-var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersion, functionName, args, org_name) {
-	logger.debug('\n\n============ Instantiate chaincode on channel ' + channelName +
+var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersion, fcn, args, isUpgrade) {
+	logger.info('\n\n============ Instantiate chaincode on channel ' + channelName +
 		' ============\n');
 
 	helper.setupChaincodeDeploy();
 
 	var client = null;
 	var channel = null;
+
 	var eventhubs = [];
 	var type = 'instantiate';
 	var tx_id = null;
 
-	org_name = helper.checkOrg(org_name);
-
-	return helper.getClientForOrg(org_name).then(_client => {
+	return helper.getClient().then(_client => {
 		client = _client;
 		channel = client.getChannel(channelName);
 		tx_id = client.newTransactionID(true);
@@ -36,9 +35,10 @@ var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersio
 
 		// send proposal to endorser
 		var request = {
+			targets: helper.getPeers(client, 0),
 			chaincodeId: chaincodeName,
 			chaincodeVersion: chaincodeVersion,
-			fcn: functionName,
+			fcn: fcn,
 			args: args,
 			txId: tx_id,
 			chaincodeType: "golang",
@@ -46,6 +46,8 @@ var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersio
 		// this is the longest response delay in the test, sometimes
 		// x86 CI times out. set the per-request timeout to a super-long value
 		return channel.sendInstantiateProposal(request, 120000);
+	}, (err) => {
+		throw new Error('Failed to create client ' + err);
 	}).then((results) => {
 		var proposalResponses = results[0];
 		var proposal = results[1];
@@ -68,7 +70,7 @@ var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersio
 			}
 			all_good = all_good & one_good;
 		}
-		if (isExist == proposalResponses.length) return Promise.resolve("exist");
+		if (isExist == proposalResponses.length) return "exist";
 		if (all_good) {
 			logger.debug(util.format('Successfully sent Proposal and received ProposalResponse: Status - %s, message - "%s", metadata - "%s", endorsement signature: %s', proposalResponses[0].response.status, proposalResponses[0].response.message, proposalResponses[0].response.payload, proposalResponses[0].endorsement.signature));
 			var request = {
@@ -90,7 +92,7 @@ var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersio
 					let handle = setTimeout(() => {
 						eh.unregisterTxEvent(deployId);
 						eh.disconnect();
-						reject(new Error('REQUEST_TIMEOUT:' + eh._ep._endpoint.addr));
+						reject(new Error('REQUEST_TIMEOUT:' + eh._peer._endpoint.addr));
 					}, 120000);
 					eh.registerTxEvent(deployId.toString(), (tx, code, block_num) => {
 						clearTimeout(handle);
@@ -117,13 +119,13 @@ var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersio
 
 			var sendPromise = channel.sendTransaction(request);
 			return Promise.all([sendPromise].concat(eventPromises));
-		}else {
+		} else {
 			return Promise.reject("Bad Proposals")
 		}
 	}).then((results) => {
 		if (typeof results != Array && results == "exist") {
 			logger.info("The chaincode is exist in this channel");
-			return {status:  "chaincode exists"};
+			return { status: "chaincode exists" };
 		} else {
 			let sendTransaction_results = results[0]; // Promise all will return the results in order of the of Array
 			let event_results = results[1];
@@ -132,7 +134,7 @@ var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersio
 				throw sendTransaction_results;
 			} else if (sendTransaction_results.status === 'SUCCESS') {
 				logger.info('Successfully sent transaction to instantiate the chaincode to the orderer.');
-				return {status:  "Instantiate chaincode successfully"}
+				return { status: "Instantiate chaincode successfully", tx_id: tx_id.getTransactionID(true) }
 			} else {
 				logger.error('Failed to order the transaction to instantiate the chaincode. Error code: ' + sendTransaction_results.status);
 				throw new Error('Failed to order the transaction to instantiate the chaincode. Error code: ' + sendTransaction_results.status);
