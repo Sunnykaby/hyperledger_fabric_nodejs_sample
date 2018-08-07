@@ -44,3 +44,11 @@ To run the application, execute the following node command: `node app-test.js [c
 If you don't want to use a user context with CA. And you can use a default admin user identity with client configuration in the Connection Profile. And to use the default admin identity, you should make the `useAdmin` to be true, for any function you want to call via `client` or `channel`.
 
 
+### Code Style
+Follow a guide [node-style-guide](https://github.com/dead-horse/node-style-gui)
+
+### Reference
+
+* [hyperledger-fabric-docker-compose](https://github.com/yeasy/docker-compose-files/tree/master/hyperledger_fabric/v1.2.0)
+
+

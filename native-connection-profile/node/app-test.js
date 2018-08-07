@@ -6,7 +6,6 @@ var logger = helper.getLogger();
 program
     .version('0.1 Beta')
     .description('A sample fabric node sdk test program')
-    .option('-t, --type [type]', 'Run type, all or single', 'all')
     .option('-m, --method [method]', 'run method for single', 'init');
 
 program.parse(process.argv)
