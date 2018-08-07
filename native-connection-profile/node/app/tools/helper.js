@@ -55,6 +55,10 @@ function getClient() {
 	});
 }
 
+function getCaService() {
+	return configTool.initCaService();
+}
+
 /**
  * Set the system env gopath with the target chaincode root path
  */
@@ -75,3 +79,4 @@ exports.checkOrg = checkOrg;
 exports.initNetworkConfig = initNetworkConfig;
 exports.getOrderer = getOrderer;
 exports.getPeers = getPeers;
+exports.getCaService = getCaService;

@@ -30,18 +30,18 @@
 # this may be commented out to resolve installed version of tools if desired
 export PATH=${PWD}/../bin:${PWD}:$PATH
 export FABRIC_CFG_PATH=${PWD}
+export VERBOSE=false
 
 # Print the usage message
-function printHelp () {
+function printHelp() {
   echo "Usage: "
-  echo "  byfn.sh up|down|restart|generate|upgrade [-c <channel name>] [-t <timeout>] [-d <delay>] [-f <docker-compose-file>] [-s <dbtype>] [-i <imagetag>]"
-  echo "  byfn.sh -h|--help (print this message)"
-  echo "    <mode> - one of 'up', 'down', 'restart' or 'generate'"
+  echo "  byfn.sh <mode> [-c <channel name>] [-t <timeout>] [-d <delay>] [-f <docker-compose-file>] [-s <dbtype>] [-l <language>] [-i <imagetag>] [-v]"
+  echo "    <mode> - one of 'up', 'down', 'restart', 'generate' or 'upgrade'"
   echo "      - 'up' - bring up the network with docker-compose up"
   echo "      - 'down' - clear the network with docker-compose down"
   echo "      - 'restart' - restart the network"
   echo "      - 'generate' - generate required certificates and genesis block"
-  echo "      - 'upgrade'  - upgrade the network from v1.0.x to v1.1"
+  echo "      - 'upgrade'  - upgrade the network from version 1.1.x to 1.2.x"
   echo "    -c <channel name> - channel name to use (defaults to \"mychannel\")"
   echo "    -t <timeout> - CLI timeout duration in seconds (defaults to 10)"
   echo "    -d <delay> - delay duration in seconds (defaults to 3)"
@@ -49,13 +49,15 @@ function printHelp () {
   echo "    -s <dbtype> - the database backend to use: goleveldb (default) or couchdb"
   echo "    -l <language> - the chaincode language: golang (default) or node"
   echo "    -i <imagetag> - the tag to be used to launch the network (defaults to \"latest\")"
+  echo "    -v - verbose mode"
+  echo "  byfn.sh -h (print this message)"
   echo
   echo "Typically, one would first generate the required certificates and "
   echo "genesis block, then bring up the network. e.g.:"
   echo
   echo "	byfn.sh generate -c mychannel"
   echo "	byfn.sh up -c mychannel -s couchdb"
-  echo "        byfn.sh up -c mychannel -s couchdb -i 1.1.0-alpha"
+  echo "        byfn.sh up -c mychannel -s couchdb -i 1.2.x"
   echo "	byfn.sh up -l node"
   echo "	byfn.sh down -c mychannel"
   echo "        byfn.sh upgrade -c mychannel"
@@ -67,27 +69,27 @@ function printHelp () {
 }
 
 # Ask user for confirmation to proceed
-function askProceed () {
+function askProceed() {
   read -p "Continue? [Y/n] " ans
   case "$ans" in
-    y|Y|"" )
-      echo "proceeding ..."
+  y | Y | "")
+    echo "proceeding ..."
     ;;
-    n|N )
-      echo "exiting..."
-      exit 1
+  n | N)
+    echo "exiting..."
+    exit 1
     ;;
-    * )
-      echo "invalid response"
-      askProceed
+  *)
+    echo "invalid response"
+    askProceed
     ;;
   esac
 }
 
 # Obtain CONTAINER_IDS and remove them
 # TODO Might want to make this optional - could clear other containers
-function clearContainers () {
-  CONTAINER_IDS=$(docker ps -aq)
+function clearContainers() {
+  CONTAINER_IDS=$(docker ps -a | awk '($2 ~ /dev-peer.*.mycc.*/) {print $1}')
   if [ -z "$CONTAINER_IDS" -o "$CONTAINER_IDS" == " " ]; then
     echo "---- No containers available for deletion ----"
   else
@@ -99,7 +101,7 @@ function clearContainers () {
 # specifically the following images are often left behind:
 # TODO list generated image naming patterns
 function removeUnwantedImages() {
-  DOCKER_IMAGE_IDS=$(docker images | grep "dev\|none\|test-vp\|peer[0-9]-" | awk '{print $3}')
+  DOCKER_IMAGE_IDS=$(docker images | awk '($1 ~ /dev-peer.*.mycc.*/) {print $3}')
   if [ -z "$DOCKER_IMAGE_IDS" -o "$DOCKER_IMAGE_IDS" == " " ]; then
     echo "---- No images available for deletion ----"
   else
@@ -117,35 +119,35 @@ function checkPrereqs() {
   # Note, we check configtxlator externally because it does not require a config file, and peer in the
   # docker image because of FAB-8551 that makes configtxlator return 'development version' in docker
   LOCAL_VERSION=$(configtxlator version | sed -ne 's/ Version: //p')
-  DOCKER_IMAGE_VERSION=$(docker run --rm hyperledger/fabric-tools:$IMAGETAG peer version | sed -ne 's/ Version: //p'|head -1)
+  DOCKER_IMAGE_VERSION=$(docker run --rm hyperledger/fabric-tools:$IMAGETAG peer version | sed -ne 's/ Version: //p' | head -1)
 
   echo "LOCAL_VERSION=$LOCAL_VERSION"
   echo "DOCKER_IMAGE_VERSION=$DOCKER_IMAGE_VERSION"
 
-  if [ "$LOCAL_VERSION" != "$DOCKER_IMAGE_VERSION" ] ; then
-     echo "=================== WARNING ==================="
-     echo "  Local fabric binaries and docker images are  "
-     echo "  out of  sync. This may cause problems.       "
-     echo "==============================================="
+  if [ "$LOCAL_VERSION" != "$DOCKER_IMAGE_VERSION" ]; then
+    echo "=================== WARNING ==================="
+    echo "  Local fabric binaries and docker images are  "
+    echo "  out of  sync. This may cause problems.       "
+    echo "==============================================="
   fi
 
-  for UNSUPPORTED_VERSION in $BLACKLISTED_VERSIONS ; do
-     echo "$LOCAL_VERSION" | grep -q $UNSUPPORTED_VERSION
-     if [ $? -eq 0 ] ; then
-       echo "ERROR! Local Fabric binary version of $LOCAL_VERSION does not match this newer version of BYFN and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
-       exit 1
-     fi
+  for UNSUPPORTED_VERSION in $BLACKLISTED_VERSIONS; do
+    echo "$LOCAL_VERSION" | grep -q $UNSUPPORTED_VERSION
+    if [ $? -eq 0 ]; then
+      echo "ERROR! Local Fabric binary version of $LOCAL_VERSION does not match this newer version of BYFN and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
+      exit 1
+    fi
 
-     echo "$DOCKER_IMAGE_VERSION" | grep -q $UNSUPPORTED_VERSION
-     if [ $? -eq 0 ] ; then
-       echo "ERROR! Fabric Docker image version of $DOCKER_IMAGE_VERSION does not match this newer version of BYFN and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
-       exit 1
-     fi
+    echo "$DOCKER_IMAGE_VERSION" | grep -q $UNSUPPORTED_VERSION
+    if [ $? -eq 0 ]; then
+      echo "ERROR! Fabric Docker image version of $DOCKER_IMAGE_VERSION does not match this newer version of BYFN and is unsupported. Either move to a later version of Fabric or checkout an earlier version of fabric-samples."
+      exit 1
+    fi
   done
 }
 
 # Generate the needed certificates, the genesis block and start the network.
-function networkUp () {
+function networkUp() {
   checkPrereqs
   # generate artifacts if they don't exist
   if [ ! -d "crypto-config" ]; then
@@ -163,20 +165,20 @@ function networkUp () {
     exit 1
   fi
   # now run the end to end script
-  docker exec cli scripts/script.sh $CHANNEL_NAME $CLI_DELAY $LANGUAGE $CLI_TIMEOUT
+  docker exec cli scripts/script.sh $CHANNEL_NAME $CLI_DELAY $LANGUAGE $CLI_TIMEOUT $VERBOSE
   if [ $? -ne 0 ]; then
     echo "ERROR !!!! Test failed"
     exit 1
   fi
 }
 
-# Upgrade the network from v1.0.x to v1.1
-# Stop the orderer and peers, backup the ledger from orderer and peers, cleanup chaincode containers and images
+# Upgrade the network components which are at version 1.1.x to 1.2.x
+# Stop the orderer and peers, backup the ledger for orderer and peers, cleanup chaincode containers and images
 # and relaunch the orderer and peers with latest tag
-function upgradeNetwork () {
-  docker inspect  -f '{{.Config.Volumes}}' orderer.example.com |grep -q '/var/hyperledger/production/orderer'
+function upgradeNetwork() {
+  docker inspect -f '{{.Config.Volumes}}' orderer.example.com | grep -q '/var/hyperledger/production/orderer'
   if [ $? -ne 0 ]; then
-    echo "ERROR !!!! This network does not appear to be using volumes for its ledgers, did you start from fabric-samples >= v1.0.6?"
+    echo "ERROR !!!! This network does not appear to be using volumes for its ledgers, did you start from fabric-samples >= v1.1.x?"
     exit 1
   fi
 
@@ -187,9 +189,9 @@ function upgradeNetwork () {
 
   export IMAGE_TAG=$IMAGETAG
   if [ "${IF_COUCHDB}" == "couchdb" ]; then
-      COMPOSE_FILES="-f $COMPOSE_FILE -f $COMPOSE_FILE_COUCH"
+    COMPOSE_FILES="-f $COMPOSE_FILE -f $COMPOSE_FILE_COUCH"
   else
-      COMPOSE_FILES="-f $COMPOSE_FILE"
+    COMPOSE_FILES="-f $COMPOSE_FILE"
   fi
 
   # removing the cli container
@@ -210,30 +212,30 @@ function upgradeNetwork () {
 
     # Remove any old containers and images for this peer
     CC_CONTAINERS=$(docker ps | grep dev-$PEER | awk '{print $1}')
-    if [ -n "$CC_CONTAINERS" ] ; then
-        docker rm -f $CC_CONTAINERS
+    if [ -n "$CC_CONTAINERS" ]; then
+      docker rm -f $CC_CONTAINERS
     fi
     CC_IMAGES=$(docker images | grep dev-$PEER | awk '{print $1}')
-    if [ -n "$CC_IMAGES" ] ; then
-        docker rmi -f $CC_IMAGES
+    if [ -n "$CC_IMAGES" ]; then
+      docker rmi -f $CC_IMAGES
     fi
 
     # Start the peer again
     docker-compose $COMPOSE_FILES up -d --no-deps $PEER
   done
 
-  docker exec cli scripts/upgrade_to_v11.sh $CHANNEL_NAME $CLI_DELAY $LANGUAGE $CLI_TIMEOUT
+  docker exec cli scripts/upgrade_to_v12.sh $CHANNEL_NAME $CLI_DELAY $LANGUAGE $CLI_TIMEOUT $VERBOSE
   if [ $? -ne 0 ]; then
     echo "ERROR !!!! Test failed"
     exit 1
   fi
 }
 
-
 # Tear down running network
-function networkDown () {
-  docker-compose -f $COMPOSE_FILE -f $COMPOSE_FILE_COUCH down --volumes
-  docker-compose -f $COMPOSE_FILE down --volumes
+function networkDown() {
+  # stop org3 containers also in addition to org1 and org2, in case we were running sample to add org3
+  docker-compose -f $COMPOSE_FILE -f $COMPOSE_FILE_COUCH -f $COMPOSE_FILE_ORG3 down --volumes --remove-orphans
+
   # Don't remove the generated artifacts -- note, the ledgers are always removed
   if [ "$MODE" != "restart" ]; then
     # Bring down the network, deleting the volumes
@@ -244,19 +246,19 @@ function networkDown () {
     #Cleanup images
     removeUnwantedImages
     # remove orderer block and other channel configuration transactions and certs
-    # rm -rf channel-artifacts/*.block channel-artifacts/*.tx crypto-config ./org3-artifacts/crypto-config/ channel-artifacts/org3.json
+    rm -rf channel-artifacts/*.block channel-artifacts/*.tx crypto-config ./org3-artifacts/crypto-config/ channel-artifacts/org3.json
     # remove the docker-compose yaml file that was customized to the example
-    # rm -f docker-compose-e2e.yaml
+    rm -f docker-compose-e2e.yaml
   fi
 }
 
 # Using docker-compose-e2e-template.yaml, replace constants with private key file names
 # generated by the cryptogen tool and output a docker-compose.yaml specific to this
 # configuration
-function replacePrivateKey () {
+function replacePrivateKey() {
   # sed on MacOSX does not support -i flag with a null extension. We will use
-  # 't' for our back-up's extension and depete it at the end of the function
-  ARCH=`uname -s | grep Darwin`
+  # 't' for our back-up's extension and delete it at the end of the function
+  ARCH=$(uname -s | grep Darwin)
   if [ "$ARCH" == "Darwin" ]; then
     OPTS="-it"
   else
@@ -301,7 +303,7 @@ function replacePrivateKey () {
 # After we run the tool, the certs will be parked in a folder titled ``crypto-config``.
 
 # Generates Org certs using cryptogen tool
-function generateCerts (){
+function generateCerts() {
   which cryptogen
   if [ "$?" -ne 0 ]; then
     echo "cryptogen tool not found. exiting"
@@ -416,7 +418,7 @@ function generateChannelArtifacts() {
   echo "#################################################################"
   set -x
   configtxgen -profile TwoOrgsChannel -outputAnchorPeersUpdate \
-  ./channel-artifacts/Org2MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org2MSP
+    ./channel-artifacts/Org2MSPanchors.tx -channelID $CHANNEL_NAME -asOrg Org2MSP
   res=$?
   set +x
   if [ $res -ne 0 ]; then
@@ -427,8 +429,8 @@ function generateChannelArtifacts() {
 }
 
 # Obtain the OS and Architecture string that will be used to select the correct
-# native binaries for your platform
-OS_ARCH=$(echo "$(uname -s|tr '[:upper:]' '[:lower:]'|sed 's/mingw64_nt.*/windows/')-$(uname -m | sed 's/x86_64/amd64/g')" | awk '{print tolower($0)}')
+# native binaries for your platform, e.g., darwin-amd64 or linux-amd64
+OS_ARCH=$(echo "$(uname -s | tr '[:upper:]' '[:lower:]' | sed 's/mingw64_nt.*/windows/')-$(uname -m | sed 's/x86_64/amd64/g')" | awk '{print tolower($0)}')
 # timeout duration - the duration the CLI should wait for a response from
 # another container before giving up
 CLI_TIMEOUT=10
@@ -440,16 +442,20 @@ CHANNEL_NAME="mychannel"
 COMPOSE_FILE=docker-compose-e2e.yaml
 #
 COMPOSE_FILE_COUCH=docker-compose-couch.yaml
+# org3 docker compose file
+COMPOSE_FILE_ORG3=docker-compose-org3.yaml
+#
 # use golang as the default language for chaincode
 LANGUAGE=golang
 # default image tag
-IMAGETAG="latest"
+IMAGETAG="1.2.0"
 # Parse commandline args
-if [ "$1" = "-m" ];then	# supports old usage, muscle memory is powerful!
-    shift
+if [ "$1" = "-m" ]; then # supports old usage, muscle memory is powerful!
+  shift
 fi
-MODE=$1;shift
-# Determine whether starting, stopping, restarting or generating for announce
+MODE=$1
+shift
+# Determine whether starting, stopping, restarting, generating or upgrading
 if [ "$MODE" == "up" ]; then
   EXPMODE="Starting"
 elif [ "$MODE" == "down" ]; then
@@ -457,7 +463,7 @@ elif [ "$MODE" == "down" ]; then
 elif [ "$MODE" == "restart" ]; then
   EXPMODE="Restarting"
 elif [ "$MODE" == "generate" ]; then
-  EXPMODE="Generating certs and genesis block for"
+  EXPMODE="Generating certs and genesis block"
 elif [ "$MODE" == "upgrade" ]; then
   EXPMODE="Upgrading the network"
 else
@@ -465,37 +471,48 @@ else
   exit 1
 fi
 
-while getopts "h?m:c:t:d:f:s:l:i:" opt; do
+while getopts "h?c:t:d:f:s:l:i:v" opt; do
   case "$opt" in
-    h|\?)
-      printHelp
-      exit 0
+  h | \?)
+    printHelp
+    exit 0
     ;;
-    c)  CHANNEL_NAME=$OPTARG
+  c)
+    CHANNEL_NAME=$OPTARG
     ;;
-    t)  CLI_TIMEOUT=$OPTARG
+  t)
+    CLI_TIMEOUT=$OPTARG
     ;;
-    d)  CLI_DELAY=$OPTARG
+  d)
+    CLI_DELAY=$OPTARG
     ;;
-    f)  COMPOSE_FILE=$OPTARG
+  f)
+    COMPOSE_FILE=$OPTARG
     ;;
-    s)  IF_COUCHDB=$OPTARG
+  s)
+    IF_COUCHDB=$OPTARG
     ;;
-    l)  LANGUAGE=$OPTARG
+  l)
+    LANGUAGE=$OPTARG
     ;;
-    i)  IMAGETAG=`uname -m`"-"$OPTARG
+  i)
+    IMAGETAG=$(go env GOARCH)"-"$OPTARG
+    ;;
+  v)
+    VERBOSE=true
     ;;
   esac
 done
 
+
 # Announce what was requested
 
-  if [ "${IF_COUCHDB}" == "couchdb" ]; then
-        echo
-        echo "${EXPMODE} with channel '${CHANNEL_NAME}' and CLI timeout of '${CLI_TIMEOUT}' seconds and CLI delay of '${CLI_DELAY}' seconds and using database '${IF_COUCHDB}'"
-  else
-        echo "${EXPMODE} with channel '${CHANNEL_NAME}' and CLI timeout of '${CLI_TIMEOUT}' seconds and CLI delay of '${CLI_DELAY}' seconds"
-  fi
+if [ "${IF_COUCHDB}" == "couchdb" ]; then
+  echo
+  echo "${EXPMODE} for channel '${CHANNEL_NAME}' with CLI timeout of '${CLI_TIMEOUT}' seconds and CLI delay of '${CLI_DELAY}' seconds and using database '${IF_COUCHDB}'"
+else
+  echo "${EXPMODE} for channel '${CHANNEL_NAME}' with CLI timeout of '${CLI_TIMEOUT}' seconds and CLI delay of '${CLI_DELAY}' seconds"
+fi
 # ask for confirmation to proceed
 askProceed
 
@@ -511,7 +528,7 @@ elif [ "${MODE}" == "generate" ]; then ## Generate Artifacts
 elif [ "${MODE}" == "restart" ]; then ## Restart the network
   networkDown
   networkUp
-elif [ "${MODE}" == "upgrade" ]; then ## Upgrade the network from v1.0.x to v1.1
+elif [ "${MODE}" == "upgrade" ]; then ## Upgrade the network from version 1.1.x to 1.2.x
   upgradeNetwork
 else
   printHelp

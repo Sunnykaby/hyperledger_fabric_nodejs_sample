@@ -2,7 +2,7 @@
 
 var fsx = require('fs-extra');
 var Client = require('fabric-client');
-var base_config_path = "../"
+var base_config_path = "../artifacts/connection-profile/"
 
 var ConfigTool = class {
 
@@ -10,6 +10,7 @@ var ConfigTool = class {
     constructor() {
         this._client = null;
         this._org = null;
+        this._caService = null;
     }
 
     cleanUpConfigCache(orgName) {
@@ -28,18 +29,18 @@ var ConfigTool = class {
         //  this connection profile does not have the client information, we will
         //  load that later so that we can switch this client to be in a different
         //  organization.
-        if(this._client!=null && this._org == org){
+        if (this._client != null && this._org == org) {
             return Promise.resolve(this._client);
         }
         var client = Client.loadFromConfig(base_config_path + 'network.yaml');
         // Load the client information for an organization.
         // The file only has the client section.
         // A real application might do this when a new user logs in.
-        if(this.checkParam(org)){
+        if (this.checkParam(org)) {
             client.loadFromConfig(base_config_path + orgName + '.yaml');
             this._org = org;
         }
-        
+
         // tell this client instance where the state and key stores are located
         return client.initCredentialStores().then((nothing) => {
             this._client = client;
@@ -47,12 +48,20 @@ var ConfigTool = class {
         });
     }
 
-    setUserContext() {
-        
+    initCaService() {
+        if (this._caService == null) {
+            this._caService = this._client.getCertificateAuthority();
+        }
+        return this._caService;
+    }
+
+    getClientCryptoStorePath() {
+        var clientConfig = this._client.getClientConfig();
+        return clientConfig.credentialStore.cryptoStore.path;
     }
 
     checkParam(arg) {
-        if(arg !=undefined && arg != null) return true;
+        if (arg != undefined && arg != null) return true;
         else return false;
     }
 }

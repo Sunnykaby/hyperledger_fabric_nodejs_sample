@@ -1,7 +1,7 @@
 #!/bin/bash
 
 WORK_DIR=${PWD}
-FAB_VER=v1.1.0
+FAB_VER=v1.2.0
 
 # Print the usage message
 function printHelp() {
@@ -47,22 +47,23 @@ function replacePrivateKey() {
 	else
 		OPTS="-i"
 	fi
+	CURRENT_DIR=$PWD
+	cd artifacts/connection-profile
 	cp network-tmpl.yaml network.yaml
-
+	cd $CURRENT_DIR/artifacts
 	# The next steps will replace the template's contents with the
 	# actual values of the private key file names for the two Orgs.
 
-	CURRENT_DIR=$PWD
-	cd artifacts
+	
 	cd crypto-config/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore/
 	PRIV_KEY=$(ls *_sk)
 	cd "$CURRENT_DIR"
-	sed $OPTS "s/ORG1_PRIVATE_KEY/${PRIV_KEY}/g" network.yaml
+	sed $OPTS "s/ORG1_PRIVATE_KEY/${PRIV_KEY}/g" artifacts/connection-profile/network.yaml
 	cd artifacts
 	cd crypto-config/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore/
 	PRIV_KEY=$(ls *_sk)
 	cd "$CURRENT_DIR"
-	sed $OPTS "s/ORG2_PRIVATE_KEY/${PRIV_KEY}/g" network.yaml
+	sed $OPTS "s/ORG2_PRIVATE_KEY/${PRIV_KEY}/g" artifacts/connection-profile/network.yaml
 	# If MacOSX, remove the temporary backup of the docker-compose file
 	if [ "$ARCH" == "Darwin" ]; then
 		rm network.yamlt
@@ -111,7 +112,7 @@ function do_clean() {
 	rm -rf fabric-samples
 	rm artifacts/crypto-config
 	rm artifacts/channel-artifacts
-	rm network.yaml
+	rm artifacts/connection-profile/network.yaml
 }
 
 MODE=$1

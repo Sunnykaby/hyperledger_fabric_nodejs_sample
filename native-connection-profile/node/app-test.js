@@ -1,5 +1,5 @@
 var helper = require("./app/tools/helper.js");
-var api = require("./app/apiHandler.js");
+var api = require("./app/api-handler.js");
 var program = require('commander');
 var logger = helper.getLogger();
 
@@ -84,35 +84,35 @@ try {
     helper.initNetworkConfig().then(result => {
         //Just enroll the client tls cert and key
         return api.enroll(enrollReq);
-    }).then(result => {
-        console.log(result);
-        return api.createChannel(createChannelRequest);
-    }).then((result) => {
-        console.log(result);
-        return api.joinChannel(joinChannelRequest);
-    }).then(result => {
-        console.log(result);
-        // Install chaincode
-        return api.installChaincode(installChaincodeRequest);
-    }).then((result) => {
-        // Instantiate chaincode
-        return api.instantiateChaincode(instantiateChaincodeRequest);
-    }).then((result) => {
-        console.log(result)
-        // invoke chaincode
-        return api.invokeChaincode(invokeChaincodeRequest);
-    }).then((result) => {
-        console.log(result)
-        queryChannelRequest.txid = result.tx_id;
-        // query chaincode
-        return api.queryChaincode(queryChaincodeRequest)
-    }).then((result) => {
-        console.log(result)
-        return api.queryChannel(queryChannelRequest);
-    }).then(result => {
-        console.log(result);
-        return api.queryChaincodeInfo(queryChaincodeInfoRequest);
-    }).then(result => {
+    // }).then(result => {
+    //     console.log(result);
+    //     return api.createChannel(createChannelRequest);
+    // }).then((result) => {
+    //     console.log(result);
+    //     return api.joinChannel(joinChannelRequest);
+    // }).then(result => {
+    //     console.log(result);
+    //     // Install chaincode
+    //     return api.installChaincode(installChaincodeRequest);
+    // }).then((result) => {
+    //     // Instantiate chaincode
+    //     return api.instantiateChaincode(instantiateChaincodeRequest);
+    // }).then((result) => {
+    //     console.log(result)
+    //     // invoke chaincode
+    //     return api.invokeChaincode(invokeChaincodeRequest);
+    // }).then((result) => {
+    //     console.log(result)
+    //     queryChannelRequest.txid = result.tx_id;
+    //     // query chaincode
+    //     return api.queryChaincode(queryChaincodeRequest)
+    // }).then((result) => {
+    //     console.log(result)
+    //     return api.queryChannel(queryChannelRequest);
+    // }).then(result => {
+    //     console.log(result);
+    //     return api.queryChaincodeInfo(queryChaincodeInfoRequest);
+    // }).then(result => {
         console.log(result);
         console.log("All Steps Completed Sucessfully");
         process.exit();
