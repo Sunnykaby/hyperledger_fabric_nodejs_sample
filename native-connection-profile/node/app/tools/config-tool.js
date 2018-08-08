@@ -37,7 +37,7 @@ var ConfigTool = class {
         // The file only has the client section.
         // A real application might do this when a new user logs in.
         if (this.checkParam(org)) {
-            client.loadFromConfig(base_config_path + orgName + '.yaml');
+            client.loadFromConfig(base_config_path + org + '.yaml');
             this._org = org;
         }
 

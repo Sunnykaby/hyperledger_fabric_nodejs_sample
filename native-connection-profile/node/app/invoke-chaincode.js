@@ -10,7 +10,7 @@ var logger = helper.getLogger('invoke-chaincode');
  * @param {*The invoke function name} fcn 
  * @param {*The invoke function args} args 
  */
-var invokeChaincode = function (channelName, chaincodeName, fcn, args) {
+var invokeChaincode = function (channelName, chaincodeName, fcn, args, org, peers) {
 	logger.info(util.format('\n============ invoke transaction on channel %s ============\n', channelName));
 
 	helper.setupChaincodeDeploy();
@@ -22,7 +22,7 @@ var invokeChaincode = function (channelName, chaincodeName, fcn, args) {
 	var tx_id = null;
 	var pass_results = null;
 
-	return helper.getClient().then(_client => {
+	return helper.getClient(org).then(_client => {
 		client = _client;
 		channel = client.getChannel(channelName);
 		// an event listener can only register with a peer in its own org
@@ -32,12 +32,12 @@ var invokeChaincode = function (channelName, chaincodeName, fcn, args) {
 		// send proposal to endorser
 
 		var request = {
-			targets: helper.getPeers(client, 0),
 			chaincodeId: chaincodeName,
 			fcn: fcn,
 			args: args,
 			txId: tx_id,
 		};
+		helper.addTargetsToRequest(peers, request);
 		return channel.sendTransactionProposal(request);
 	}, (err) => {
 		throw new Error('Failed to create client ' + err);

@@ -9,7 +9,7 @@ var logger = helper.getLogger('Query');
  * @param {*Query function name} fcn 
  * @param {*Query function args} args 
  */
-var queryChaincode = function (channelName, chaincodeName, fcn, args) {
+var queryChaincode = function (channelName, chaincodeName, fcn, args, org, peers) {
 	logger.info('\n\n============ Query chaincode on organizations ============\n');
 	helper.setupChaincodeDeploy();
 
@@ -21,11 +21,11 @@ var queryChaincode = function (channelName, chaincodeName, fcn, args) {
 		channel = client.getChannel(channelName);
 		// send query
 		var request = {
-			targets: helper.getPeers(client, 0),
 			chaincodeId: chaincodeName,
 			fcn: fcn,
 			args: args
 		};
+		helper.addTargetsToRequest(peers, request);
 		return channel.queryByChaincode(request, true);
 	}, (err) => {
 		throw new Error('Failed to create client ' + err);

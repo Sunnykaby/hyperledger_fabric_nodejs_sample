@@ -10,19 +10,18 @@ var logger = helper.getLogger('install-chaincode');
  * @param {*Target chaincode version} chaincodeVersion 
  */
 var installChaincode = function (chaincodeName, chaincodePath,
-	chaincodeVersion) {
+	chaincodeVersion,org,peers) {
 	logger.info('\n\n============ Install chaincode on organizations ============\n');
 	helper.setupChaincodeDeploy();
 
 	var client = null;
 	var tx_id = null;
-	return helper.getClient().then(_client => {
+	return helper.getClient(org).then(_client => {
 		client = _client;
 		tx_id = client.newTransactionID(true);
 		// If the targets parameter is excluded from the request parameter list 
 		// then the peers defined in the current organization of the client will be used.
 		let request = {
-			targets: helper.getPeers(client,0),
 			chaincodePath: chaincodePath,
 			chaincodeId: chaincodeName,
 			chaincodeVersion: chaincodeVersion,
@@ -30,6 +29,7 @@ var installChaincode = function (chaincodeName, chaincodePath,
 			chaincodeType: "golang",
 			txId: tx_id
 		};
+		helper.addTargetsToRequest(peers,request);
 		return client.installChaincode(request);
 	}, (err) => {
 		throw new Error('Failed to create client. ' + err);
@@ -39,12 +39,17 @@ var installChaincode = function (chaincodeName, chaincodePath,
 		var errors = [];
 		var isExist = 0;
 		for (var i in proposalResponses) {
+			logger.info(proposalResponses[i])
 			let one_good = false;
 			if (proposalResponses && proposalResponses[i].response && proposalResponses[i].response.status === 200) {
 				one_good = true;
 				logger.info('install proposal was good');
 			} else {
-				if (proposalResponses[i].details.indexOf("exists") != -1) {
+				if (proposalResponses[i].hasOwnProperty("details")&&proposalResponses[i].details.indexOf("exists") != -1) {
+					logger.info("Chaincode is exists. Continue...");
+					isExist++;
+				}
+				else if (proposalResponses[i].response.hasOwnProperty("message")&&proposalResponses[i].response.message.indexOf("exists") != -1) {
 					logger.info("Chaincode is exists. Continue...");
 					isExist++;
 				}

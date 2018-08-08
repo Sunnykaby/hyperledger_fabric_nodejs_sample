@@ -3,14 +3,14 @@ var helper = require('./tools/helper.js');
 var logger = helper.getLogger('Query');
 
 
-var queryChannel = function (channelName, peer, query_tx_id) {
+var queryChannel = function (channelName, peer, query_tx_id, org) {
 	logger.info('\n\n============ Query Channel info and block data ============\n');
 	helper.setupChaincodeDeploy();
 
 	var client = null;
 	var channel = null;
 
-	return helper.getClient().then(_client => {
+	return helper.getClient(org).then(_client => {
 		client = _client;
 		//If you want to use the default admin identity, true is required
 		return client.queryChannels(peer, true);

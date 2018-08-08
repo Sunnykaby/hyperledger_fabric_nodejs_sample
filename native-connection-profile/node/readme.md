@@ -51,4 +51,10 @@ Follow a guide [node-style-guide](https://github.com/dead-horse/node-style-gui)
 
 * [hyperledger-fabric-docker-compose](https://github.com/yeasy/docker-compose-files/tree/master/hyperledger_fabric/v1.2.0)
 
+### CA and user role
 
+Also related to identities, you should make a decision on whether Fabric-CA should be part of your solution. This is a server with REST APIs that supports dynamic identity management with registration, enrollment (getting certificates), revocation and re-enrollment. So it is very useful in providing user identities on the fly. Note that user identities provisioned this way are only of the MEMBER role, which means it won't be able to perform certain operations reserved for the ADMIN role:
+
+* create/update channel
+* install/instantiate chaincode
+* query installed/instantiated chaincodes

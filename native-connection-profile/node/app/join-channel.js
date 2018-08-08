@@ -36,7 +36,7 @@ var joinChannel = function (channelName, peers,
 			block: genesis_block,
 			txId: tx_id
 		};
-
+		helper.addTargetsToRequest(peers, request);
 		return channel.joinChannel(request); //admin from current org
 	}).then((results) => {
 		var proposalResponses = results;

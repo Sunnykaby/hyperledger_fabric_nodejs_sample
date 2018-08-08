@@ -5,14 +5,14 @@ var path = require("path");
 var fs = require("fs");
 var base_path = '../../artifacts/channel-artifacts/';
 
-var createChannel = function (channelName, orgs,
+var createChannel = function (channelName, org,
 	isFromFile) {
 	logger.info('\n\n============ Create channel ============\n');
 
 	var client = null;
 	var signatures  = [];
 
-	return helper.getClient().then(_client => {
+	return helper.getClient(org).then(_client => {
 		client = _client;
 		// get the config envelope created by the configtx tool
 		//configtxgen -profile TwoOrgsChannel -outputCreateChannelTx ./channel3.tx -channelID mychannel3

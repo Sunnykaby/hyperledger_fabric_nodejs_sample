@@ -5,27 +5,30 @@ var logger = helper.getLogger('ca-enroll');
 var CATools = require('./tools/ca-tools.js');
 var ca = new CATools();
 
-var caEnroll = function (enrollmentID, enrollmentSecret) {
+var caEnroll = function (enrollmentID, enrollmentSecret, org) {
 	logger.info('\n\n============ Enroll a user to  chaincode on organizations ============\n');
 
 
 	var client = null;
+	var member1 = "member1";
+	var member2 = "member2";
 
-	return helper.getClient().then(_client => {
+	return helper.getClient(org).then(_client => {
 		client = _client;
 		return ca.getAdminUser(client, enrollmentID, enrollmentSecret);
 	}).then(admin => {
-		logger.info(admin);
-		return ca.getMemberUserForOrg(client, "org1", admin, "member10");
+		// logger.info(admin);
+		logger.info("Get and set a admin user with username : %s", enrollmentID);
+		return ca.getMemberUserForOrg(client, org, admin, member1);
 	}).then(member => {
-		logger.info(member);
-		return ca.getMember(client, "member6", enrollmentID, enrollmentSecret, "Org1MSP")
+		// logger.info(member);
+		logger.info("Get and set a member user with username : %s", member1);
+		return ca.getMember(client, member2, enrollmentID, enrollmentSecret, org)
 	}).then(member => {
-		logger.info(member);
+		// logger.info(member);
+		logger.info("Get and set a member user with username : %s", member2);
 		// get the CA associated with this client's organization
 		let caService = client.getCertificateAuthority();
-
-
 		let request = {
 			enrollmentID: enrollmentID,
 			enrollmentSecret: enrollmentSecret,

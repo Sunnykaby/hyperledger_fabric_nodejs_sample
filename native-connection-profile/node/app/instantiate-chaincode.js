@@ -11,7 +11,7 @@ var logger = helper.getLogger('instantiate-chaincode');
  * @param {*The called function name when the chaincode instantiate} fcn 
  * @param {*The args that called function require} args 
  */
-var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersion, fcn, args, isUpgrade) {
+var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersion, fcn, args, org, peers, isUpgrade) {
 	logger.info('\n\n============ Instantiate chaincode on channel ' + channelName +
 		' ============\n');
 
@@ -24,7 +24,7 @@ var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersio
 	var type = 'instantiate';
 	var tx_id = null;
 
-	return helper.getClient().then(_client => {
+	return helper.getClient(org).then(_client => {
 		client = _client;
 		channel = client.getChannel(channelName);
 		tx_id = client.newTransactionID(true);
@@ -35,7 +35,6 @@ var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersio
 
 		// send proposal to endorser
 		var request = {
-			targets: helper.getPeers(client, 0),
 			chaincodeId: chaincodeName,
 			chaincodeVersion: chaincodeVersion,
 			fcn: fcn,
@@ -43,6 +42,7 @@ var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersio
 			txId: tx_id,
 			chaincodeType: "golang",
 		};
+		helper.addTargetsToRequest(peers,request);
 		// this is the longest response delay in the test, sometimes
 		// x86 CI times out. set the per-request timeout to a super-long value
 		return channel.sendInstantiateProposal(request, 120000);
@@ -61,6 +61,10 @@ var instantiateChaincode = function (channelName, chaincodeName, chaincodeVersio
 				logger.info(type + ' proposal was good');
 			} else {
 				if (proposalResponses[i].details.indexOf("exists") != -1) {
+					logger.info("Chaincode is exists. Continue...");
+					isExist++;
+				}
+				else if (proposalResponses[i].response.hasOwnProperty("message")&&proposalResponses[i].response.message.indexOf("exists") != -1) {
 					logger.info("Chaincode is exists. Continue...");
 					isExist++;
 				}
